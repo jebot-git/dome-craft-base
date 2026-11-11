@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=@APP_NAME@ Test
+Comment=Experimental native ArtCraft test editor
+Exec=@PROJECT_NAME_LOWER@ %f
+Icon=applications-graphics
+Terminal=false
+Categories=Graphics;
+StartupWMClass=@APP_ID@

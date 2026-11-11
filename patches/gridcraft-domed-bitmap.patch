@@ -1,0 +1,375 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index d640aa5..781190c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1498,7 +1498,7 @@ dependencies = [
+  "emath",
+  "epaint_default_fonts",
+  "font-types",
+- "harfrust",
++ "harfrust 0.12.0",
+  "log",
+  "nohash-hasher",
+  "parking_lot",
+@@ -2177,6 +2177,10 @@ dependencies = [
+ [[package]]
+ name = "gridcraft-pdf"
+ version = "0.16.0"
++dependencies = [
++ "harfrust 0.13.3",
++ "unicode-bidi",
++]
+ 
+ [[package]]
+ name = "gridcraft-sandbox"
+@@ -2300,7 +2304,20 @@ checksum = "c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9"
+ dependencies = [
+  "bitflags 2.13.2",
+  "bytemuck",
+- "read-fonts",
++ "read-fonts 0.41.0",
++ "smallvec",
++]
++
++[[package]]
++name = "harfrust"
++version = "0.13.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "948d0741125ba89cd3e1c23e5642415b6ade7e1d29d67ba25fb925b533e989d6"
++dependencies = [
++ "bitflags 2.13.2",
++ "bytemuck",
++ "once_cell",
++ "read-fonts 0.43.3",
+  "smallvec",
+ ]
+ 
+@@ -4224,6 +4241,17 @@ dependencies = [
+  "once_cell",
+ ]
+ 
++[[package]]
++name = "read-fonts"
++version = "0.43.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "005c8acf251756c478b0bf402885bfd88a1476020c4c7e6060edc1aa68da38ea"
++dependencies = [
++ "bytemuck",
++ "font-types 0.12.6",
++ "once_cell",
++]
++
+ [[package]]
+ name = "redox_syscall"
+ version = "0.4.1"
+@@ -4972,7 +5000,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68"
+ dependencies = [
+  "bytemuck",
+- "read-fonts",
++ "read-fonts 0.41.0",
+ ]
+ 
+ [[package]]
+diff --git a/apps/gridcraft-cli/src/main.rs b/apps/gridcraft-cli/src/main.rs
+index 2c49c60..af07920 100644
+--- a/apps/gridcraft-cli/src/main.rs
++++ b/apps/gridcraft-cli/src/main.rs
+@@ -66,6 +66,10 @@ fn stdout_failed(e: std::io::Error) -> ! {
+ }
+ 
+ fn main() -> ExitCode {
++    if let Err(error) = gridcraft_engine::validate_bitmap() {
++        eprintln!("DomeD bitmap font: {error}");
++        return ExitCode::FAILURE;
++    }
+     // A confined launcher run (and its probes) comes first, before anything else starts.
+     let raw: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
+     if let Some(code) = gridcraft_sandbox::handle_args(&raw) {
+diff --git a/crates/engine/src/cmd/format/sizes.rs b/crates/engine/src/cmd/format/sizes.rs
+index 8b304c8..777c115 100644
+--- a/crates/engine/src/cmd/format/sizes.rs
++++ b/crates/engine/src/cmd/format/sizes.rs
+@@ -127,6 +127,10 @@ pub fn chars_to_points(c: f64) -> f64 {
+ /// Approximate text width in points for autofit (no font metrics in the engine: average glyph
+ /// widths for the default font; a front end with fonts measures instead, see `Session::text_width`).
+ pub fn approx_text_width(text: &str, size: f32, bold: bool) -> f32 {
++    if let Ok(font) = gridcraft_pdf::bitmap::from_env() {
++        let _ = font;
++        return gridcraft_pdf::text_width(gridcraft_pdf::Font::Helvetica, size, text) * 96. / 72.;
++    }
+     let mut w = 0.0;
+     for c in text.chars() {
+         w += match c {
+diff --git a/crates/engine/src/cmd/inspect.rs b/crates/engine/src/cmd/inspect.rs
+index e91a269..2ff0a8d 100644
+--- a/crates/engine/src/cmd/inspect.rs
++++ b/crates/engine/src/cmd/inspect.rs
+@@ -8,7 +8,7 @@ use super::{CommandSpec, EngineError, Result, Session, always, bad, bool_param,
+ pub fn specs() -> Vec<CommandSpec> {
+     vec![
+         cmd!(query "document.inspect", "Inspect Workbook", [], None, "{} → sheets, selection, names, tables, charts, dirty, trust (local|fromFile), history", has_doc, inspect),
+-        cmd!(query "sheet.read", "Read Range", [], None, "{range?: \"A1:D10\" (default: used range), sheet?, formulas?: bool, formatted?: bool} → rows of values", has_doc, read),
++        cmd!(query "sheet.read", "Read Range", [], None, "{range?: \"A1:D10\" (default: used range), sheet?, formulas?: bool, formatted?: bool, styles?: bool (bounded native viewport)} → rows of values", has_doc, read),
+         cmd!(query "cell.get", "Get Cell", [], None, "{cell?, sheet?} → value, formula, display text, style, comment, link, python {code, output, typeName, preview, stale}", has_doc, cell_get),
+         cmd!(query "selection.stats", "Selection Statistics", [], None, "{} → count, sum, average, min, max", has_doc, sel_stats),
+         cmd!(query "history.list", "Undo History", [], None, "{} → undo/redo labels, grouping (an undo group is open)", has_doc, history),
+@@ -97,9 +97,18 @@ fn read(s: &mut Session, p: &Json) -> Result<Json> {
+     }
+     let formulas = bool_param(p, "formulas").unwrap_or(false);
+     let formatted = bool_param(p, "formatted").unwrap_or(false);
++    let with_styles = bool_param(p, "styles").unwrap_or(false);
++    if with_styles && r.count() > 4096 {
++        return Err(bad("sheet.read", "styled viewport exceeds 4096 cells"));
++    }
++    let mut style_rows = Vec::new();
++    let mut numeric_rows = Vec::new();
++    let mut palette = serde_json::Map::new();
+     let mut rows = Vec::with_capacity(r.height() as usize);
+     for row in r.start.row..=r.end.row {
+         let mut cols = Vec::with_capacity(r.width() as usize);
++        let mut styles = Vec::new();
++        let mut numeric = Vec::new();
+         for col in r.start.col..=r.end.col {
+             let c = CellRef::new(row, col);
+             let v = if formulas && let Some(f) = sh.cell(c).and_then(|x| x.formula.as_ref()) {
+@@ -110,10 +119,37 @@ fn read(s: &mut Session, p: &Json) -> Result<Json> {
+                 value_json(&sh.value(c))
+             };
+             cols.push(v);
++            if with_styles {
++                numeric.push(matches!(sh.value(c), Value::Number(_)));
++                let id = sh.style_id(c);
++                styles.push(json!(id.0));
++                let key = id.0.to_string();
++                if !palette.contains_key(&key) {
++                    let style = d.wb.styles.get(id);
++                    let mut data = serde_json::to_value(style).map_err(|e| bad("sheet.read", &e.to_string()))?;
++                    data["foreground"] = json!(style.font.color.hex(&d.wb.theme).unwrap_or_else(|| "#000000".into()));
++                    data["background"] =
++                        if style.fill.pattern != gridcraft_model::PatternType::None { json!(style.fill.fg.hex(&d.wb.theme)) } else { Json::Null };
++                    data["borderColors"] = json!({"top":style.borders.top.color.hex(&d.wb.theme),"bottom":style.borders.bottom.color.hex(&d.wb.theme),"left":style.borders.left.color.hex(&d.wb.theme),"right":style.borders.right.color.hex(&d.wb.theme)});
++                    palette.insert(key, data);
++                }
++            }
+         }
+         rows.push(Json::Array(cols));
++        if with_styles {
++            style_rows.push(Json::Array(styles));
++            numeric_rows.push(numeric);
++        }
++    }
++    let mut result = json!({"range": r.a1(), "sheet": sh.name, "values": rows});
++    if with_styles {
++        result["styles"] = json!(style_rows);
++        result["stylePalette"] = Json::Object(palette);
++        result["numeric"] = json!(numeric_rows);
++        result["rowHeights"] = json!((r.start.row..=r.end.row).map(|row| sh.row_height(row)).collect::<Vec<_>>());
++        result["columnWidths"] = json!((r.start.col..=r.end.col).map(|col| sh.col_width(col)).collect::<Vec<_>>());
+     }
+-    Ok(json!({"range": r.a1(), "sheet": sh.name, "values": rows}))
++    Ok(result)
+ }
+ 
+ fn cell_get(s: &mut Session, p: &Json) -> Result<Json> {
+@@ -173,3 +209,22 @@ fn list_commands(s: &mut Session, p: &Json) -> Result<Json> {
+         .collect();
+     Ok(Json::Array(v))
+ }
++
++#[cfg(test)]
++#[allow(clippy::unwrap_used)]
++mod dome_viewport_tests {
++    #[test]
++    fn styled_read_is_bounded_and_matches_cell_style() {
++        let mut session = super::Session::new();
++        session.execute("file.new", serde_json::json!({})).unwrap();
++        session.execute("cell.set", serde_json::json!({"cell":"B2","input":"42"})).unwrap();
++        session.execute("home.bold", serde_json::json!({"range":"B2","on":true})).unwrap();
++        let cell = session.execute("cell.get", serde_json::json!({"cell":"B2"})).unwrap();
++        let view = session.execute("sheet.read", serde_json::json!({"range":"A1:C3","styles":true})).unwrap();
++        let key = view["styles"][1][1].as_u64().unwrap().to_string();
++        assert_eq!(view["stylePalette"][&key]["font"], cell["style"]["font"]);
++        assert_eq!(view["stylePalette"][&key]["font"]["bold"], true);
++        assert!(session.execute("sheet.read", serde_json::json!({"range":"A1:A5000","styles":true})).is_err());
++        assert!(session.execute("sheet.read", serde_json::json!({"range":"A1:C3"})).unwrap().get("stylePalette").is_none());
++    }
++}
+diff --git a/crates/engine/src/cmd/print/text.rs b/crates/engine/src/cmd/print/text.rs
+index 0523aa4..d6a8c20 100644
+--- a/crates/engine/src/cmd/print/text.rs
++++ b/crates/engine/src/cmd/print/text.rs
+@@ -12,7 +12,12 @@ const MAX_WRAP_LINES: usize = 2000;
+ /// character is measured once: re-measuring the line for every word, or the rest of an
+ /// over-long word for every piece cut from it, made a long paragraph or word quadratic.
+ pub(super) fn wrap_lines(text: &str, font: Font, size: f32, width: f32) -> Vec<String> {
+-    let units_of = |s: &str| -> u64 { s.chars().map(|c| u64::from(font.char_width(c))).sum() };
++    let units_of = |s: &str| -> u64 {
++        if gridcraft_pdf::bitmap::configured() {
++            return gridcraft_pdf::text_width(font, 1000., s).max(0.).ceil() as u64;
++        }
++        s.chars().map(|c| u64::from(font.char_width(c))).sum()
++    };
+     let fits = |units: u64| units as f32 * size / 1000.0 <= width;
+     let space = units_of(" ");
+     let mut out = Vec::new();
+@@ -152,6 +157,15 @@ pub(super) fn draw_text(pg: &mut Page, b: &Block, placement: TextPlacement<'_>)
+         return;
+     }
+     let st = &l.style;
++    let _bitmap_family = gridcraft_pdf::bitmap::select_style(
++        &st.font.name,
++        match (st.font.bold, st.font.italic) {
++            (true, true) => "Bold Italic",
++            (true, false) => "Bold",
++            (false, true) => "Italic",
++            _ => "Regular",
++        },
++    );
+     let mut size = st.font.size.clamp(1.0, 409.0) * b.scale;
+     let font = font_for(st);
+     let pad = PAD_PX * b.k;
+diff --git a/crates/engine/src/lib.rs b/crates/engine/src/lib.rs
+index c608a8e..be49efd 100644
+--- a/crates/engine/src/lib.rs
++++ b/crates/engine/src/lib.rs
+@@ -535,7 +535,14 @@ pub struct Session {
+ 
+ impl Session {
+     pub fn new() -> Session {
+-        Session::default()
++        let mut session = Session::default();
++        if gridcraft_pdf::bitmap::configured() {
++            session.text_width = Some(std::sync::Arc::new(|text, font, _| {
++                let _family = gridcraft_pdf::bitmap::select_family(&font.name);
++                gridcraft_pdf::text_width(gridcraft_pdf::Font::Helvetica, font.size, text)
++            }));
++        }
++        session
+     }
+     pub fn documents(&self) -> &[DocState] {
+         &self.docs
+@@ -1134,3 +1141,16 @@ pub fn cell(r: u32, c: u32) -> CellRef {
+ 
+ #[cfg(test)]
+ mod tests;
++
++/// Validate the downstream bitmap strike before opening documents.
++pub fn validate_bitmap() -> std::result::Result<(), String> {
++    gridcraft_pdf::bitmap::from_env().map(|_| ())
++}
++
++/// Runtime attestation for the private DomeD transport.
++pub fn bitmap_status() -> std::result::Result<serde_json::Value, String> {
++    let font = gridcraft_pdf::bitmap::from_env()?;
++    Ok(
++        serde_json::json!({"provider":"domed-bdf-v1","family":font.family,"pixels":font.pixels,"glyphs":font.glyphs.len(),"outlineFallback":false,"shaping":"harfrust-bdf","families":gridcraft_pdf::bitmap::families()}),
++    )
++}
+diff --git a/crates/mcp/src/tools.rs b/crates/mcp/src/tools.rs
+index 87f7fea..4a6d6ea 100644
+--- a/crates/mcp/src/tools.rs
++++ b/crates/mcp/src/tools.rs
+@@ -113,6 +113,7 @@ const UNTARGETED: &[&str] = &["list_commands", "list_functions", "list_windows",
+ /// `doc` id (from list_windows) and default to the active window.
+ pub fn tool_definitions() -> Vec<Value> {
+     let mut tools = base_tool_definitions();
++    tools.push(json!({"name":"domed_bitmap_status","description":"DomeD bitmap provider identity and strike metrics","inputSchema":{"type":"object","properties":{},"additionalProperties":false},"annotations":{"readOnlyHint":true}}));
+     for t in &mut tools {
+         if UNTARGETED.iter().any(|n| t["name"] == *n) {
+             continue;
+@@ -698,6 +699,12 @@ impl Backend for Targeted<'_> {
+ 
+ /// Runs one tool. Failures become `isError` results with a readable message.
+ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
++    if name == "domed_bitmap_status" {
++        return match gridcraft_engine::bitmap_status() {
++            Ok(value) => ToolResult::json(&value),
++            Err(error) => ToolResult::error(error),
++        };
++    }
+     let empty = Map::new();
+     let a = match args {
+         Value::Object(o) => o,
+diff --git a/crates/pdf/Cargo.toml b/crates/pdf/Cargo.toml
+index cd63456..40e1cdc 100644
+--- a/crates/pdf/Cargo.toml
++++ b/crates/pdf/Cargo.toml
+@@ -10,3 +10,5 @@ readme = "README.md"
+ workspace = true
+ 
+ [dependencies]
++harfrust = "=0.13.3"
++unicode-bidi = "=0.3.18"
+diff --git a/crates/pdf/src/lib.rs b/crates/pdf/src/lib.rs
+index 6898382..6c35002 100644
+--- a/crates/pdf/src/lib.rs
++++ b/crates/pdf/src/lib.rs
+@@ -14,6 +14,12 @@
+ #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+ #![forbid(unsafe_code)]
+ 
++pub mod bitmap {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/bitmap.rs"));
++}
++mod bitmap_harf {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/harf.rs"));
++}
+ mod metrics;
+ mod symbol;
+ 
+@@ -168,6 +174,12 @@ impl Font {
+ 
+     /// Advance width of a character in 1/1000 em.
+     pub fn char_width(self, c: char) -> u16 {
++        if bitmap::configured() && matches!(unicode_bidi::bidi_class(c), unicode_bidi::BidiClass::NSM | unicode_bidi::BidiClass::BN) {
++            return 0;
++        }
++        if let Ok(font) = bitmap::active() {
++            return ((f64::from(font.advance(font.gid(c))) * 1000. / f64::from(font.pixels)).ceil().clamp(0., 65535.)) as u16;
++        }
+         if self == Font::Symbol {
+             return symbol_code(c).and_then(symbol_width).unwrap_or(500);
+         }
+@@ -201,6 +213,9 @@ impl Font {
+ 
+ /// Width of `text` in points when set in `font` at `size` points.
+ pub fn text_width(font: Font, size: f32, text: &str) -> f32 {
++    if let Ok(face) = bitmap::active() {
++        return bitmap_harf::line(&face, text).iter().map(|g| g.advance as f32 * g.units_scale as f32).sum::<f32>() * size / face.pixels as f32;
++    }
+     // u64: a u32 sum overflows for ~8 million characters.
+     let units: u64 = text.chars().map(|c| u64::from(font.char_width(c))).sum();
+     units as f32 * size / 1000.0
+@@ -610,6 +625,31 @@ impl Page {
+         if text.is_empty() || !extent(size) || !finite(&[origin.x, origin.y]) {
+             return;
+         }
++        if let Ok(face) = bitmap::active() {
++            let (sn, cs) = if angle.is_finite() { angle.sin_cos() } else { (0., 1.) };
++            let mut stream =
++                format!("q\n{} {} {} {} {} {} cm\n{}\n", n(cs), n(-sn), n(sn), n(cs), n(origin.x), n(self.y(origin.y)), rgb_op(color, false));
++            let mut pen = 0.;
++            for glyph in bitmap_harf::line(&face, text) {
++                let gid = glyph.gid;
++                let source = glyph.source.as_deref().unwrap_or(&face);
++                let glyph_scale = f64::from(size) / f64::from(source.pixels);
++                for [x, y, w, h] in source.rectangles(gid) {
++                    let _ = writeln!(
++                        stream,
++                        "{} {} {} {} re f",
++                        n((pen + (x + f64::from(glyph.x)) * glyph_scale) as f32),
++                        n((-(y + h + f64::from(glyph.y)) * glyph_scale) as f32),
++                        n((w * glyph_scale) as f32),
++                        n((h * glyph_scale) as f32)
++                    );
++                }
++                pen += f64::from(glyph.advance) * glyph_scale;
++            }
++            stream.push_str("Q");
++            self.op(&stream);
++            return;
++        }
+         let fi = font.index();
+         let size = n(size.min(10_000.0));
+         let (sn, cs) = if angle.is_finite() { angle.sin_cos() } else { (0.0, 1.0) };

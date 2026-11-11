@@ -1,0 +1,11 @@
+#!/usr/bin/python3
+"""Route ArtCraft through the verified DomeD realm without guessing sockets."""
+import os
+import shutil
+import sys
+
+helper = shutil.which("dome-link")
+command = ["artcraft-base-demo", *sys.argv[1:]]
+if helper:
+    os.execv(helper, [helper, "--app-id", "org.domed.ArtCraft.BaseDemo", "--", *command])
+os.execvp(command[0], command)

@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/jebot-git/DomeD.git",
+  "revision": "60412084f240ef47644e25fa5cff412d6a1b5bb4",
+  "toolkit": "DomeD-patched FLTK 1.4.5",
+  "sha256": {
+    "native/gpu-window.h": "244697f75f9a5824e5c13a7c95d2e2802ed423d358899104f0ef968cfe950ab2",
+    "native/fltk_appearance.h": "25525e1d43c3036c5fc9ddd99e3c9621e8f9439147412b9bcfc1f2152201f591",
+    "native/bdf_font.hpp": "bf53e1f94e9e49de92ff9aa19aa336c93bcdbdafd06c52c30631475eaa2a258c",
+    "native/tray/desktop-menu.cpp": "b9c7dd91a3e82f6bee54ca7db6f742ed431b871a1f56cf1f59d2502833d5f1a1",
+    "LICENSE": "331891ba7afe9ea12e7f9834bdb37db7abd9131183ed85215f6b4109b0303877"
+  }
+}

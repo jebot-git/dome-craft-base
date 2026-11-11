@@ -1,0 +1,113 @@
+diff --git a/crates/automation/src/headless.rs b/crates/automation/src/headless.rs
+index 99ff360..787c7c2 100644
+--- a/crates/automation/src/headless.rs
++++ b/crates/automation/src/headless.rs
+@@ -463,6 +463,27 @@ impl Headless {
+         Ok(png)
+     }
+ 
++    /// Isolated layer pixels for native dock thumbnails. The live document, its
++    /// visibility, selection and history are never changed by this read operation.
++    pub fn render_layer_png(&mut self, index: Option<usize>, layer: u64, max_side: u32) -> Result<Vec<u8>, AutomationError> {
++        let i = self.doc_index(index)?;
++        let state = self.session.documents().get(i).ok_or_else(|| AutomationError::BadRequest("document no longer exists".into()))?;
++        crate::budgets::check_preview(state.doc.size.width, state.doc.size.height, max_side)?;
++        if max_side == 0 || max_side > 256 {
++            return Err(AutomationError::BadRequest("layer thumbnail side must be 1–256 pixels".into()));
++        }
++        let mut isolated =
++            state.doc.layer(photocraft_doc::LayerId(layer)).cloned().ok_or_else(|| AutomationError::BadRequest("layer no longer exists".into()))?;
++        isolated.visible = true;
++        isolated.clipped = false;
++        let mut document = state.doc.as_ref().clone();
++        document.layers = vec![isolated];
++        let (png, warnings) = files::render_png_with_warnings(&document, max_side, None)?;
++        crate::budgets::check_png(png.len())?;
++        self.pending_diagnostics.extend(warnings);
++        Ok(png)
++    }
++
+     pub fn session_list(&self) -> Value {
+         photocraft_engine::inspect::session(&self.session)
+     }
+@@ -679,3 +700,26 @@ mod waited_error_tests {
+         ));
+     }
+ }
++
++#[cfg(test)]
++#[allow(clippy::unwrap_used)]
++mod dome_layer_preview_tests {
++    use super::*;
++    #[test]
++    fn isolates_layer_without_mutating_document_or_history() {
++        let mut h = Headless::new();
++        h.command_run("file.new", json!({"width":8,"height":8,"background":"white"})).unwrap();
++        let background = h.inspect(None).unwrap()["activeLayer"].as_u64().unwrap();
++        h.command_run("layer.new.layer", json!({"name":"Red"})).unwrap();
++        h.command_run("edit.fill", json!({"contents":"color","color":"#ff0000"})).unwrap();
++        let before = h.inspect(None).unwrap();
++        let flattened = h.render_png(None, 32).unwrap();
++        let thumbnail = h.render_layer_png(None, background, 32).unwrap();
++        assert_ne!(flattened, thumbnail);
++        assert_eq!(before, h.inspect(None).unwrap());
++        assert!(h.render_layer_png(None, u64::MAX, 32).is_err());
++        assert!(h.render_layer_png(None, background, 0).is_err());
++        assert!(h.render_layer_png(None, background, 257).is_err());
++        assert_eq!(before, h.inspect(None).unwrap());
++    }
++}
+diff --git a/crates/automation/src/server.rs b/crates/automation/src/server.rs
+index 0795e1f..a196748 100644
+--- a/crates/automation/src/server.rs
++++ b/crates/automation/src/server.rs
+@@ -239,6 +239,10 @@ pub struct SaveParams {
+ #[derive(Debug, Default, Deserialize, JsonSchema)]
+ #[serde(deny_unknown_fields)]
+ pub struct PreviewParams {
++    /// Headless native layer thumbnail: isolate this layer without editing the document.
++    /// When supplied, max_side must be 1–256. Bridge screenshots reject this option.
++    #[serde(default)]
++    pub layer: Option<u64>,
+     /// Headless mode only: document index (default: the active document).
+     /// Bridge previews capture the app window and reject `index`.
+     #[serde(default)]
+@@ -940,7 +944,10 @@ impl PhotocraftMcp {
+         let max = p.max_side.unwrap_or(1024);
+         if let Some(r) = self
+             .headless_op(move |h| {
+-                let res = h.render_png(p.index, max);
++                let res = match p.layer {
++                    Some(layer) => h.render_layer_png(p.index, layer, max),
++                    None => h.render_png(p.index, max),
++                };
+                 for d in h.drain_diagnostics() {
+                     // Ignore a failed stderr write: the completed render must still be returned.
+                     let _ = writeln!(std::io::stderr(), "warning: {d}");
+@@ -957,8 +964,8 @@ impl PhotocraftMcp {
+         let Some(b) = self.bridge_client() else {
+             return Ok(no_backend());
+         };
+-        if p.index.is_some() {
+-            return Ok(fail("`index` is only supported in headless mode; bridge previews capture the app window"));
++        if p.index.is_some() || p.layer.is_some() {
++            return Ok(fail("`index` and `layer` are only supported in headless mode; bridge previews capture the app window"));
+         }
+         self.screenshot(b, Some(max)).await
+     }
+diff --git a/crates/codecs/src/codecs/tiff/decode.rs b/crates/codecs/src/codecs/tiff/decode.rs
+index e7956ad..ee08026 100644
+--- a/crates/codecs/src/codecs/tiff/decode.rs
++++ b/crates/codecs/src/codecs/tiff/decode.rs
+@@ -1074,11 +1074,6 @@ fn prepare(f: &File<'_>, dir: &Ifd, limits: &Limits, whole: bool) -> Result<Prep
+     })
+ }
+ 
+-/// The JPEGTables tag: quantization and Huffman tables shared by every JPEG strip or tile.
+-const TAG_JPEG_TABLES: u16 = 347;
+-/// The Predictor tag (1 none, 2 horizontal differencing, 3 floating point).
+-const TAG_PREDICTOR: u16 = 317;
+-
+ /// Steps [`jpeg_sof`] may take per strip or tile beyond the file's length: room to read again
+ /// the few header segments of strips or tiles that share one stream (a sparse file pointing its
+ /// blank tiles at one tile).

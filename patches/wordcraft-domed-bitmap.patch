@@ -1,0 +1,472 @@
+diff --git a/apps/wordcraft-cli/src/main.rs b/apps/wordcraft-cli/src/main.rs
+index 903ba69..27f18b5 100644
+--- a/apps/wordcraft-cli/src/main.rs
++++ b/apps/wordcraft-cli/src/main.rs
+@@ -887,6 +887,10 @@ fn parity_markdown(p: &Value) -> String {
+ }
+ 
+ fn main() -> ExitCode {
++    if let Err(error) = wordcraft_engine::validate_bitmap() {
++        eprintln!("DomeD bitmap font: {error}");
++        return ExitCode::FAILURE;
++    }
+     let args: Vec<OsString> = std::env::args_os().skip(1).collect();
+     // Language packs installed in the suite's font store are used; `proof.installPack` installs
+     // only while the person has turned downloading on in the app.
+diff --git a/crates/engine/src/cmd/file.rs b/crates/engine/src/cmd/file.rs
+index c676e2c..5fc8731 100644
+--- a/crates/engine/src/cmd/file.rs
++++ b/crates/engine/src/cmd/file.rs
+@@ -698,5 +698,11 @@ fn layout_summary(s: &mut Session, _: &Value) -> CmdResult {
+         })
+         .collect();
+     let caret = l.caret_on(&s.sel.focus, s.page_hint).map(|c| json!({"page": c.page, "x": c.x, "y": c.top, "h": c.height}));
+-    Ok(json!({"pages": pages, "caret": caret, "ms": l.ms}))
++    let selection: Vec<Value> = l
++        .selection_rects(&s.doc, &s.sel.anchor, &s.sel.focus, s.page_hint)
++        .into_iter()
++        .take(100000)
++        .map(|(page, rect)| json!({"page":page,"rect":rect}))
++        .collect();
++    Ok(json!({"pages": pages, "caret": caret, "selection":selection, "ms": l.ms}))
+ }
+diff --git a/crates/engine/src/lib.rs b/crates/engine/src/lib.rs
+index e5795e5..24a446e 100644
+--- a/crates/engine/src/lib.rs
++++ b/crates/engine/src/lib.rs
+@@ -210,3 +210,16 @@ pub mod p {
+ 
+ #[cfg(test)]
+ mod tests;
++
++/// Validate the downstream bitmap strike before opening documents.
++pub fn validate_bitmap() -> std::result::Result<(), String> {
++    wordcraft_fonts::bitmap::from_env().map(|_| ())
++}
++
++/// Runtime attestation for the private DomeD transport.
++pub fn bitmap_status() -> std::result::Result<serde_json::Value, String> {
++    let font = wordcraft_fonts::bitmap::from_env()?;
++    Ok(
++        serde_json::json!({"provider":"domed-bdf-v1","family":font.family,"pixels":font.pixels,"glyphs":font.glyphs.len(),"outlineFallback":false,"shaping":"harfrust-bdf","families":wordcraft_fonts::bitmap::families()}),
++    )
++}
+diff --git a/crates/fonts/src/fontdb.rs b/crates/fonts/src/fontdb.rs
+index 6ae53ac..547b161 100644
+--- a/crates/fonts/src/fontdb.rs
++++ b/crates/fonts/src/fontdb.rs
+@@ -105,7 +105,7 @@ impl FontDb {
+ 
+     fn with_static_fonts(font_dirs: Vec<std::path::PathBuf>, fonts: impl Iterator<Item = &'static [u8]>) -> Self {
+         let mut faces = Vec::new();
+-        for data in fonts {
++        for data in fonts.filter(|_| !crate::bitmap::configured()) {
+             for f in enumerate_faces(data, MAX_FILE_FACES) {
+                 if let Some(mut face) = make_face(FontBytes::Static(data), f.index, f.family, f.style, f.legacy, f.coords) {
+                     face.local_names = f.local;
+@@ -113,6 +113,10 @@ impl FontDb {
+                 }
+             }
+         }
++        if let Ok(font) = crate::bitmap::from_env() {
++            faces.clear();
++            faces.push(Arc::new(FontFace::from_bitmap(font.clone())));
++        }
+         Self {
+             faces: RwLock::new(faces),
+             outlines: Mutex::new(HashMap::new()),
+diff --git a/crates/fonts/src/fontdb/catalog.rs b/crates/fonts/src/fontdb/catalog.rs
+index 5cd84c5..1789401 100644
+--- a/crates/fonts/src/fontdb/catalog.rs
++++ b/crates/fonts/src/fontdb/catalog.rs
+@@ -11,6 +11,9 @@ impl FontDb {
+     /// Word's font list, this holds each face's legacy family name too ("Roboto Light", "Inter
+     /// SemiBold"), which [`FontDb::face`] resolves to that face.
+     pub fn families(&self) -> Vec<String> {
++        if crate::bitmap::configured() {
++            return crate::bitmap::families();
++        }
+         let mut v: Vec<String> = self.read_faces().iter().flat_map(|f| [f.family.clone(), f.legacy_family.clone()]).collect();
+         #[cfg(not(target_arch = "wasm32"))]
+         v.extend(self.read_catalog().iter().flat_map(|c| [c.family.clone(), c.legacy.clone()]));
+@@ -81,6 +84,9 @@ impl FontDb {
+     /// name ("Roboto Light"), the styles of the faces it names ("Light", "Light Italic"); for a
+     /// localized name (宋体), those of the family it names.
+     pub fn styles(&self, family: &str) -> Vec<String> {
++        if crate::bitmap::configured() {
++            return crate::bitmap::styles(family);
++        }
+         let v = self.styles_named(family);
+         match self.english_family(family) {
+             Some(en) if v.is_empty() => self.styles_named(&en),
+diff --git a/crates/fonts/src/fontdb/face.rs b/crates/fonts/src/fontdb/face.rs
+index d3e9e01..f5b1ace 100644
+--- a/crates/fonts/src/fontdb/face.rs
++++ b/crates/fonts/src/fontdb/face.rs
+@@ -37,6 +37,7 @@ pub(super) enum FontBytes {
+ 
+ /// One loaded font face.
+ pub struct FontFace {
++    pub bitmap: Option<Arc<crate::bitmap::BitmapFont>>,
+     pub(super) id: u32,
+     /// Typographic family name (e.g. "Source Sans 3").
+     pub family: String,
+@@ -67,7 +68,7 @@ pub struct FontFace {
+     /// values).
+     pub cap_height: f64,
+     pub x_height: f64,
+-    pub shaper: harfrust::ShaperData,
++    pub shaper: Option<harfrust::ShaperData>,
+     /// Variable fonts: the named instance's axis settings (user units; empty = default instance),
+     /// the normalised location and the shaper's view of it.
+     pub coords: Vec<([u8; 4], f32)>,
+@@ -232,6 +233,10 @@ impl FontFace {
+         (!pen.over).then_some(pen.path)
+     }
+     pub(super) fn draw_outline(&self, gid: u32, max_elements: usize) -> FlipPen {
++        if let Some(path) = self.bitmap_path(gid) {
++            let over = path.elements().len() > max_elements;
++            return FlipPen { path: if over { BezPath::new() } else { path }, room: 0, over, hinted: false };
++        }
+         let mut pen = FlipPen { path: BezPath::new(), room: max_elements, over: false, hinted: false };
+         if let Some(f) = self.skrifa()
+             && let Some(g) = f.outline_glyphs().get(GlyphId::new(gid))
+@@ -335,6 +340,9 @@ impl FontFace {
+     }
+     /// Does the face map `c` to a glyph?
+     pub fn covers(&self, c: char) -> bool {
++        if let Some(font) = &self.bitmap {
++            return font.gid(c) != 0;
++        }
+         let cp = c as u32;
+         if cp < 0x1_0000 {
+             let bits = self.bmp.get_or_init(|| {
+@@ -368,6 +376,9 @@ impl FontFace {
+     }
+     /// Every mapped character and its glyph id, sorted by code point (the Glyphs panel).
+     pub fn chars(&self) -> Vec<(char, u32)> {
++        if let Some(font) = &self.bitmap {
++            return font.glyphs.keys().filter_map(|cp| char::from_u32(*cp).map(|c| (c, *cp + 1))).collect();
++        }
+         let Some(f) = self.skrifa() else { return vec![] };
+         let mut v: Vec<(char, u32)> = f.charmap().mappings().filter_map(|(cp, g)| char::from_u32(cp).map(|c| (c, g.to_u32()))).collect();
+         v.sort_unstable_by_key(|x| x.0);
+@@ -376,6 +387,9 @@ impl FontFace {
+     }
+     /// Advance width of glyph `gid` in font units.
+     pub fn advance(&self, gid: u32) -> f64 {
++        if let Some(font) = &self.bitmap {
++            return font.advance(gid) as f64;
++        }
+         self.skrifa()
+             .and_then(|f| f.glyph_metrics(Size::unscaled(), self.location()).advance_width(GlyphId::new(gid)))
+             .map(|a| a as f64)
+@@ -383,6 +397,9 @@ impl FontFace {
+     }
+     /// Glyph id for `c` (0 = .notdef).
+     pub fn glyph_for(&self, c: char) -> u32 {
++        if let Some(font) = &self.bitmap {
++            return font.gid(c);
++        }
+         self.skrifa().and_then(|f| f.charmap().map(c)).map(|g| g.to_u32()).unwrap_or(0)
+     }
+     /// Is this an East Asian (Chinese, Japanese or Korean) font? Its OS/2 code pages say so
+@@ -455,3 +472,51 @@ impl OutlinePen for FlipPen {
+         }
+     }
+ }
++
++impl FontFace {
++    pub fn from_bitmap(font: Arc<crate::bitmap::BitmapFont>) -> Self {
++        Self {
++            id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
++            family: font.family.clone(),
++            style: font.style.clone(),
++            weight: font.weight,
++            italic: font.italic,
++            upem: font.pixels as f64,
++            ascent: font.ascent as f64,
++            descent: font.descent as f64,
++            cap_height: font.ascent as f64,
++            x_height: font.ascent as f64 * 0.5,
++            shaper: None,
++            coords: Vec::new(),
++            location: Location::default(),
++            instance: None,
++            bytes: FontBytes::Owned(font.data.clone()),
++            index: 0,
++            bmp: Default::default(),
++            legacy_family: font.family.clone(),
++            local_names: Vec::new(),
++            full_name: None,
++            postscript: None,
++            outline_hinter: Default::default(),
++            glyph_styles: Default::default(),
++            hint_draws: Default::default(),
++            hint_slow: Default::default(),
++            hinting_off: Default::default(),
++            #[cfg(not(target_arch = "wasm32"))]
++            hint_strike: HINT_STRIKE,
++            bitmap: Some(font),
++        }
++    }
++    pub fn bitmap_path(&self, gid: u32) -> Option<BezPath> {
++        let font = self.bitmap.as_ref()?;
++        let mut path = BezPath::new();
++        for [x, y, w, h] in font.rectangles(gid) {
++            path.move_to((x, y));
++            path.line_to((x + w, y));
++            path.line_to((x + w, y + h));
++            path.line_to((x, y + h));
++            path.close_path();
++        }
++        Some(path)
++    }
++}
+diff --git a/crates/fonts/src/fontdb/fallback.rs b/crates/fonts/src/fontdb/fallback.rs
+index 8c18abb..dffd0a8 100644
+--- a/crates/fonts/src/fontdb/fallback.rs
++++ b/crates/fonts/src/fontdb/fallback.rs
+@@ -10,12 +10,26 @@ impl FontDb {
+     /// First face (fallback family first, then load order) that covers `c`; on native, system
+     /// fonts are cataloged and loaded lazily the first time no loaded face covers a character.
+     pub fn fallback_for(&self, c: char, exclude: u32) -> Option<Arc<FontFace>> {
++        if crate::bitmap::configured() {
++            if let Some(face) = self.read_faces().iter().find(|f| f.id() != exclude && f.covers(c)).cloned() {
++                return Some(face);
++            }
++            if let Some(font) = crate::bitmap::fallback(c) {
++                let face = Arc::new(FontFace::from_bitmap(font));
++                self.faces.write().unwrap_or_else(std::sync::PoisonError::into_inner).push(face.clone());
++                return Some(face);
++            }
++            return None;
++        }
+         self.fallback_styled(c, exclude, false, false)
+     }
+ 
+     /// [`Self::fallback_for`], preferring a bold and/or italic face of the chosen family (so
+     /// bold Persian text in a font without Persian letters stays bold).
+     pub fn fallback_styled(&self, c: char, exclude: u32, bold: bool, italic: bool) -> Option<Arc<FontFace>> {
++        if crate::bitmap::configured() {
++            return self.fallback_for(c, exclude);
++        }
+         let base = self.cached_fallback(c, exclude)?;
+         if !bold && !italic {
+             return Some(base);
+diff --git a/crates/fonts/src/fontdb/lookup.rs b/crates/fonts/src/fontdb/lookup.rs
+index ba5f37f..66955fd 100644
+--- a/crates/fonts/src/fontdb/lookup.rs
++++ b/crates/fonts/src/fontdb/lookup.rs
+@@ -12,6 +12,19 @@ impl FontDb {
+     /// name ("Roboto Light", whose styles are Light and Light Italic). Installed system fonts are
+     /// found by name whatever ran before. An exact full or PostScript name selects its face.
+     pub fn face(&self, family: &str, style: &str) -> Arc<FontFace> {
++        if crate::bitmap::configured() {
++            if let Some(font) = crate::bitmap::named(family, style) {
++                if let Some(face) = self.read_faces().iter().find(|f| f.bitmap.as_ref().is_some_and(|b| Arc::ptr_eq(b, &font))).cloned() {
++                    return face;
++                }
++                let face = Arc::new(FontFace::from_bitmap(font));
++                self.faces.write().unwrap_or_else(std::sync::PoisonError::into_inner).push(face.clone());
++                return face;
++            }
++            if let Some(face) = self.read_faces().iter().find(|f| f.bitmap.is_some()).cloned() {
++                return face;
++            }
++        }
+         if let Some(f) = self.find(family, style) {
+             return f;
+         }
+diff --git a/crates/fonts/src/fontdb/names.rs b/crates/fonts/src/fontdb/names.rs
+index 4d94585..b3284ee 100644
+--- a/crates/fonts/src/fontdb/names.rs
++++ b/crates/fonts/src/fontdb/names.rs
+@@ -208,6 +208,9 @@ pub(super) fn mini_font(tables: &[([u8; 4], Vec<u8>)]) -> Vec<u8> {
+ /// The platform's font folders (the system's and the user's), scanned by [`FontDb::global`].
+ /// Empty on wasm.
+ pub fn system_font_dirs() -> Vec<std::path::PathBuf> {
++    if crate::bitmap::configured() {
++        return Vec::new();
++    }
+     let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+     if cfg!(target_arch = "wasm32") {
+         return dirs;
+@@ -330,6 +333,9 @@ pub(super) fn enumerate_faces(data: &[u8], limit: usize) -> Vec<Found> {
+ 
+ /// The compiled-in Source Sans 3 Regular, for a database that somehow has no faces at all.
+ pub(crate) fn last_resort_face() -> Arc<FontFace> {
++    if let Ok(font) = crate::bitmap::from_env() {
++        return Arc::new(FontFace::from_bitmap(font.clone()));
++    }
+     static FACE: std::sync::OnceLock<Arc<FontFace>> = std::sync::OnceLock::new();
+     FACE.get_or_init(|| {
+         // The font is compiled in (`include_bytes!`), so parsing it can't depend on input; the
+@@ -354,6 +360,9 @@ pub(super) fn make_face(
+         FontBytes::Static(b) => b,
+         FontBytes::Owned(v) => v.as_slice(),
+     };
++    if crate::bitmap::configured() {
++        return None;
++    }
+     let f = skrifa::FontRef::from_index(data, index).ok()?;
+     let settings: Vec<(skrifa::Tag, f32)> = coords.iter().map(|(t, v)| (skrifa::Tag::new(t), *v)).collect();
+     let location = if coords.is_empty() { Location::default() } else { f.axes().location(settings.iter().copied()) };
+@@ -386,7 +395,8 @@ pub(super) fn make_face(
+         descent: -(m.descent as f64),
+         cap_height: m.cap_height.map(|v| v as f64).filter(|v| *v > 0.0).unwrap_or(m.ascent as f64 * 0.72),
+         x_height: m.x_height.map(|v| v as f64).filter(|v| *v > 0.0).unwrap_or(m.ascent as f64 * 0.5),
+-        shaper,
++        shaper: Some(shaper),
++        bitmap: None,
+         coords,
+         location,
+         instance,
+diff --git a/crates/fonts/src/lib.rs b/crates/fonts/src/lib.rs
+index 7305f5a..746ad95 100644
+--- a/crates/fonts/src/lib.rs
++++ b/crates/fonts/src/lib.rs
+@@ -8,6 +8,12 @@
+ #![forbid(unsafe_code)]
+ 
+ pub mod color;
++pub mod bitmap {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/bitmap.rs"));
++}
++mod bitmap_harf {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/harf.rs"));
++}
+ mod fontdb;
+ pub mod math;
+ mod script;
+@@ -262,9 +268,27 @@ fn shape_dir(
+     rtl: bool,
+     around: ShapeContext<'_>,
+ ) -> Vec<ShapedGlyph> {
++    if let Some(font) = &face.bitmap {
++        let mut out = Vec::new();
++        for range in script::script_runs(text) {
++            if let Some(piece) = text.get(range.clone()) {
++                let context = around.at_edges_of(text, &range);
++                out.extend(
++                    crate::bitmap_harf::shape(font, piece, features, rtl, context.before, context.after, map).into_iter().map(|g| ShapedGlyph {
++                        gid: g.gid,
++                        cluster: range.start + g.cluster,
++                        x_advance: g.advance,
++                        x_offset: g.x,
++                        y_offset: g.y,
++                    }),
++                );
++            }
++        }
++        return out;
++    }
+     let mut out = Vec::with_capacity(text.len());
+-    let shaped = face.hb().map(|hb| {
+-        let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
++    let shaped = face.hb().zip(face.shaper.as_ref()).map(|(hb, data)| {
++        let shaper = data.shaper(&hb).instance(face.instance.as_ref()).build();
+         // One script per shaping call: the shaper picks its script engine (Myanmar, Khmer,
+         // Indic, USE reordering…) from the run's script, so "Hi မြန်မာ" in one face must not be
+         // shaped as Latin. Runs come in text order; right-to-left callers regroup by cluster.
+@@ -421,7 +445,7 @@ mod tests {
+     fn kept_shape_plans_shape_as_fresh_ones() {
+         let fresh = |face: &FontFace, text: &str, features: &[Feature], rtl: bool| -> Vec<(u32, u32, i32, i32, i32)> {
+             let Some(hb) = face.hb() else { return Vec::new() };
+-            let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
++            let shaper = face.shaper.as_ref().expect("test SFNT shaper").shaper(&hb).instance(face.instance.as_ref()).build();
+             let mut buf = UnicodeBuffer::new();
+             buf.push_str(text);
+             buf.guess_segment_properties();
+@@ -457,7 +481,7 @@ mod tests {
+         let face = FontDb::global().face(DEFAULT_FAMILY, "Regular");
+         let fresh = |features: &[Feature], rtl: bool| -> Vec<(u32, i32)> {
+             let Some(hb) = face.hb() else { return Vec::new() };
+-            let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
++            let shaper = face.shaper.as_ref().expect("test SFNT shaper").shaper(&hb).instance(face.instance.as_ref()).build();
+             let mut buf = UnicodeBuffer::new();
+             buf.push_str("office");
+             buf.guess_segment_properties();
+diff --git a/crates/mcp/src/lib.rs b/crates/mcp/src/lib.rs
+index d96e774..c4df7dc 100644
+--- a/crates/mcp/src/lib.rs
++++ b/crates/mcp/src/lib.rs
+@@ -73,7 +73,17 @@ fn answer_on(session: &mut Session, method: &str, params: Value) -> Result<Value
+             let p = params.get("params").cloned().filter(|v| !v.is_null()).unwrap_or(json!({}));
+             session.run(&id, &p).map_err(|e| e.to_string())
+         }
+-        "engine.commands" => Ok(session.registry.describe()),
++        "engine.commands" => {
++            let mut commands = session.registry.describe();
++            if let Some(commands) = commands.as_array_mut() {
++                for command in commands {
++                    let reason = session.why_disabled(command.get("id").and_then(Value::as_str).unwrap_or(""));
++                    command["enabled"] = json!(reason.is_none());
++                    command["disabled_reason"] = json!(reason);
++                }
++            }
++            Ok(commands)
++        }
+         "document.inspect" => session.run("document.inspect", &params).map_err(|e| e.to_string()),
+         "ui.parity" => Ok(wordcraft_engine::catalog::parity(&session.registry)),
+         "ui.render" | "render.page" => {
+diff --git a/crates/mcp/src/tools.rs b/crates/mcp/src/tools.rs
+index a3c008a..3b52326 100644
+--- a/crates/mcp/src/tools.rs
++++ b/crates/mcp/src/tools.rs
+@@ -65,6 +65,7 @@ fn tool(name: &str, title: &str, desc: &str, schema: Value, ro: bool) -> Value {
+ /// Every MCP tool with its title, description, input schema and annotations (`tools/list`).
+ pub fn tool_definitions() -> Value {
+     json!([
++        json!({"name":"domed_bitmap_status","description":"DomeD bitmap provider identity and strike metrics","inputSchema":{"type":"object","properties":{},"additionalProperties":false},"annotations":{"readOnlyHint":true}}),
+         tool(
+             "list_commands",
+             "List commands",
+@@ -226,6 +227,12 @@ fn wrap(r: Result<Value, String>) -> ToolResult {
+ /// Run tool `name` with arguments `a` through backend `b` (`tools/call`); unknown tools and
+ /// failed calls are error results, never panics.
+ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
++    if name == "domed_bitmap_status" {
++        return match wordcraft_engine::bitmap_status() {
++            Ok(value) => ToolResult::json(&value),
++            Err(error) => ToolResult::error(error),
++        };
++    }
+     let st = |k: &str| a.get(k).and_then(Value::as_str);
+     let doc = a.get("doc").filter(|d| !d.is_null());
+     match name {
+diff --git a/crates/pdf/src/exporter.rs b/crates/pdf/src/exporter.rs
+index 77fe80c..cab9c6d 100644
+--- a/crates/pdf/src/exporter.rs
++++ b/crates/pdf/src/exporter.rs
+@@ -47,7 +47,7 @@ pub(crate) struct Exporter<'a> {
+ 
+ impl Exporter<'_> {
+     fn font(&mut self, face: &FaceRef) -> Option<Font> {
+-        if self.outlined.contains(&face.id()) {
++        if self.outlined.contains(&face.id()) || face.bitmap.is_some() {
+             return None;
+         }
+         let font_error = &mut self.font_error;
+diff --git a/crates/pdf/src/exporter/text.rs b/crates/pdf/src/exporter/text.rs
+index d1eeeb7..477be56 100644
+--- a/crates/pdf/src/exporter/text.rs
++++ b/crates/pdf/src/exporter/text.rs
+@@ -98,7 +98,7 @@ impl Exporter<'_> {
+             return;
+         }
+         let font = self.font(face);
+-        if font.is_none() && !self.outlined.contains(&face.id()) {
++        if font.is_none() && !self.outlined.contains(&face.id()) && face.bitmap.is_none() {
+             log::warn!("PDF: font {} {} could not be embedded", face.family, face.style);
+             return;
+         }
+@@ -187,7 +187,7 @@ impl Exporter<'_> {
+         let glyphs: Vec<_> = shaped.iter().map(|g| (g.cluster, f64::from(g.x_advance), f64::from(g.x_offset), f64::from(g.y_offset))).collect();
+         let Some(lay) = t.layout(face.upem, face.ascent, face.descent, &glyphs) else { return };
+         let font = self.font(&face);
+-        if font.is_none() && !self.outlined.contains(&face.id()) {
++        if font.is_none() && !self.outlined.contains(&face.id()) && face.bitmap.is_none() {
+             return;
+         }
+         let em = lay.em as f32;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ArtCraft Base Demo
+Comment=Native DomeD integration development example
+Exec=artcraft-demo
+Icon=applications-graphics
+Terminal=false
+Categories=Graphics;
+StartupWMClass=org.domed.ArtCraft.BaseDemo

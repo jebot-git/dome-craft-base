@@ -1,0 +1,3333 @@
+[
+  {
+    "id": "file.new",
+    "label": "New Presentation",
+    "menu": [
+      "File"
+    ],
+    "params": "{theme?: name, template?: starter name, size?: [w,h] pt, blank?: bool}",
+    "shortcut": "Cmd+N"
+  },
+  {
+    "id": "file.templates",
+    "label": "Starter Templates",
+    "menu": [],
+    "params": "{} → [{name, summary, theme, slides}]",
+    "shortcut": null
+  },
+  {
+    "id": "file.open",
+    "label": "Open…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path}",
+    "shortcut": "Cmd+O"
+  },
+  {
+    "id": "file.adopt",
+    "label": "Open",
+    "menu": [],
+    "params": "{path, token?} (a presentation the host read in the background and staged with Session::stage_loaded; without one, reads path like file.open)",
+    "shortcut": null
+  },
+  {
+    "id": "file.openBytes",
+    "label": "Open Data",
+    "menu": [],
+    "params": "{name, data: base64}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.save",
+    "label": "Save",
+    "menu": [
+      "File"
+    ],
+    "params": "{path?, format?: deckcraft|pptx}",
+    "shortcut": "Cmd+S"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.saveAs",
+    "label": "Save As…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path, format?}",
+    "shortcut": "Cmd+Shift+S"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.saveTemplate",
+    "label": "Save as Template…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.saveBytes",
+    "label": "Save to Data",
+    "menu": [],
+    "params": "{format?: deckcraft|pptx} → {data: base64}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.export",
+    "label": "Export…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path, format?: png|jpeg|pptx|deckcraft|outline|rtf|pdf|gif (else by path), slide?: index, all?: bool, scale?: px per pt, layout?: slides|notes|handouts (pdf), perPage?: 1|2|3|4|6|9, paper?: letter|a4|legal|a3 (pdf), orientation?: portrait|landscape (pdf), dpi?, slides?: [index]|range (\"1-3,5\"), includeHidden?, textLayer?, frame?, transparentBackground?: bool (png: leave the slide background out), width?: px 16-3840|small|medium|large|extraLarge (gif), secondsPerSlide?: 0.1-600 (gif; 5), loop?: bool (gif; true: forever)} → {path, bytes} or {files} (png, jpeg); gif adds frames, width, height, secondsPerSlide",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.info",
+    "label": "Info",
+    "menu": [
+      "File"
+    ],
+    "params": "{} → {title, path, format, dirty, slides, hiddenSlides, sections, bytes?, properties}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.render",
+    "label": "Render Slide",
+    "menu": [],
+    "params": "{slide?: index, scale?, edit?: bool, transparentBackground?: bool} → {png: base64, width, height}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.colorAt",
+    "label": "Color At",
+    "menu": [],
+    "params": "{slide?: index, x, y (slide units), scale?: px per unit (2)} → {color: \"RRGGBB\", alpha: 0..255, x, y}: the colour drawn at a point of the slide (the Eyedropper)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.close",
+    "label": "Close",
+    "menu": [
+      "File"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+W"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.properties",
+    "label": "Properties",
+    "menu": [
+      "File"
+    ],
+    "params": "{title?, subject?, author?, keywords?, comments?, category?, company?} → properties",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.recovery.save",
+    "label": "Save AutoRecover Information",
+    "menu": [],
+    "params": "{} → {written}",
+    "shortcut": null
+  },
+  {
+    "id": "file.recovery.list",
+    "label": "Recovered Presentations",
+    "menu": [],
+    "params": "{} → [{uid, path, title, saved}]",
+    "shortcut": null
+  },
+  {
+    "id": "file.recovery.open",
+    "label": "Open Recovered Presentations",
+    "menu": [],
+    "params": "{} → {opened: [document index]}",
+    "shortcut": null
+  },
+  {
+    "id": "file.recovery.discard",
+    "label": "Discard Recovered Presentations",
+    "menu": [],
+    "params": "{uid?: one entry (else all)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "file.revert",
+    "label": "Revert",
+    "menu": [],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "window.next",
+    "label": "Next Window",
+    "menu": [
+      "Window"
+    ],
+    "params": "{index?}",
+    "shortcut": "Cmd+`"
+  },
+  {
+    "disabled_reason": "nothing to undo",
+    "id": "edit.undo",
+    "label": "Undo",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Z"
+  },
+  {
+    "disabled_reason": "nothing to redo",
+    "id": "edit.redo",
+    "label": "Redo",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Y"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.cut",
+    "label": "Cut",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{scope?: slides} → {text, html?}",
+    "shortcut": "Cmd+X"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.copy",
+    "label": "Copy",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{scope?: slides} → {text, html?}",
+    "shortcut": "Cmd+C"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.paste",
+    "label": "Paste",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{text?: plain text to paste, html?: rich text from another app, scope?: slides}",
+    "shortcut": "Cmd+V"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.pasteSpecial",
+    "label": "Paste Special",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{as: destinationTheme|keepSource|picture|text} — Use Destination Theme, Keep Source Formatting, Picture (PNG), Keep Text Only",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.pasteText",
+    "label": "Paste and Match Formatting",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{text?}",
+    "shortcut": "Cmd+Shift+V"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.duplicate",
+    "label": "Duplicate",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+D"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.delete",
+    "label": "Delete",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{ids?, scope?: slides}",
+    "shortcut": "Delete"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.selectAll",
+    "label": "Select All",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{scope?: slides}",
+    "shortcut": "Cmd+A"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.deselect",
+    "label": "Deselect",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Escape"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "edit.select",
+    "label": "Select Objects",
+    "menu": [],
+    "params": "{ids: [id], add?: bool, toggle?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.new",
+    "label": "New Slide",
+    "menu": [
+      "Home",
+      "Slides"
+    ],
+    "params": "{layout?: layout name or kind (title, titleAndContent, sectionHeader, twoContent, comparison, titleOnly, blank, contentWithCaption, pictureWithCaption), at?: index, title?: text, body?: text}",
+    "shortcut": "Cmd+Shift+N"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.duplicate",
+    "label": "Duplicate Slide",
+    "menu": [
+      "Insert"
+    ],
+    "params": "{index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.delete",
+    "label": "Delete Slide",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{index?, ids?: [slide id]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.move",
+    "label": "Move Slide",
+    "menu": [],
+    "params": "{from?: index, ids?: [slide id], to: index (counted without the moved slides)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.go",
+    "label": "Go to Slide",
+    "menu": [],
+    "params": "{index} | {id}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.next",
+    "label": "Next Slide",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "PageDown"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.previous",
+    "label": "Previous Slide",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "PageUp"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.first",
+    "label": "First Slide",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Home"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.last",
+    "label": "Last Slide",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "End"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.selectRange",
+    "label": "Select Slide Range",
+    "menu": [],
+    "params": "{to: index, from?: index (default the current slide), add?: bool (keep the slides already selected)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.selectSlides",
+    "label": "Select Slides",
+    "menu": [],
+    "params": "{ids?: [slide id], indices?: [index], add?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.hide",
+    "label": "Hide Slide",
+    "menu": [
+      "Slide Show",
+      "Set Up"
+    ],
+    "params": "{index?, hidden?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.layout",
+    "label": "Layout",
+    "menu": [
+      "Home",
+      "Slides"
+    ],
+    "params": "{layout: name or kind, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.reset",
+    "label": "Reset",
+    "menu": [
+      "Home",
+      "Slides"
+    ],
+    "params": "{index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.notes",
+    "label": "Notes",
+    "menu": [
+      "View"
+    ],
+    "params": "{text | body: formatted notes (as in slide.inspect's notesBody), index?} (text as typed: untouched notes keep their formatting)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.rename",
+    "label": "Rename Slide",
+    "menu": [],
+    "params": "{name, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "section.add",
+    "label": "Add Section",
+    "menu": [
+      "Home",
+      "Slides",
+      "Section"
+    ],
+    "params": "{name?, at?: slide index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "section.rename",
+    "label": "Rename Section",
+    "menu": [
+      "Home",
+      "Slides",
+      "Section"
+    ],
+    "params": "{index, name}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "section.remove",
+    "label": "Remove Section",
+    "menu": [
+      "Home",
+      "Slides",
+      "Section"
+    ],
+    "params": "{index, slides?: bool (also delete its slides)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "section.removeAll",
+    "label": "Remove All Sections",
+    "menu": [
+      "Home",
+      "Slides",
+      "Section"
+    ],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "section.move",
+    "label": "Move Section",
+    "menu": [],
+    "params": "{index, to}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.fromOutline",
+    "label": "Slides from Outline…",
+    "menu": [
+      "Insert",
+      "Slides From"
+    ],
+    "params": "{text, markdown?: bool (headings are slides, list items bullets)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.reuseList",
+    "label": "List Slides to Reuse",
+    "menu": [],
+    "params": "{path | data: base64, name?} → {name, slides: [{index, title, hidden}]}: the slides of another presentation, for choosing which ones `slide.reuse` brings in",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.reuse",
+    "label": "Reuse Slides…",
+    "menu": [
+      "Home",
+      "Slides",
+      "New Slide"
+    ],
+    "params": "{path? | data: base64, name?, slides?: [index] (0-based, default all), keepFormatting?: bool (default false: use the destination theme), at?: index (default after the current slide)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.insert",
+    "label": "Shapes",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{preset: rect|roundRect|ellipse|triangle|rightArrow|star5|… (see shape.presets), rect: [x,y,w,h] pt, text?: string}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.icon",
+    "label": "Icons",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{name: star|arrow-right|… (see insert.icons), rect?: [x,y,w,h]}",
+    "shortcut": null
+  },
+  {
+    "id": "insert.icons",
+    "label": "Icon Gallery",
+    "menu": [],
+    "params": "{} → [{name, label, category}]",
+    "shortcut": null
+  },
+  {
+    "id": "shape.presets",
+    "label": "Shape Gallery",
+    "menu": [],
+    "params": "{} → [{name, label, category}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.textBox",
+    "label": "Text Box",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{rect?: [x,y,w,h], text?: string}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.picture",
+    "label": "Picture from File…",
+    "menu": [
+      "Insert",
+      "Images",
+      "Pictures"
+    ],
+    "params": "{path? | data: base64, name?, rect?: [x,y,w,h]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.photoAlbum",
+    "label": "Photo Album…",
+    "menu": [
+      "Insert",
+      "Images"
+    ],
+    "params": "{pictures?: [{path?|data: base64, name?, rot?: deg, brightness?: -1..1, contrast?: -1..1} | {text}], layout?: fit|1|2|4|1title|2title|4title, frame?: none|rect|rounded|simple, captions?: bool, grayscale?: bool, theme?: name} — omit pictures to open the dialog",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.photoAlbumEdit",
+    "label": "Edit Photo Album…",
+    "menu": [
+      "Insert",
+      "Images"
+    ],
+    "params": "{album?: id, pictures?: same as insert.photoAlbum, layout?, frame?, captions?, grayscale?, theme?} — omit pictures to reopen the dialog on the current album",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.table",
+    "label": "Table…",
+    "menu": [
+      "Insert",
+      "Tables"
+    ],
+    "params": "{rows, cols, rect?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.chart",
+    "label": "Chart…",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{type?: column|bar|line|pie|doughnut|area|scatter|stackedColumn|…, rect?, categories?: [..], series?: [{name, values}]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.audio",
+    "label": "Audio from File…",
+    "menu": [
+      "Insert",
+      "Media",
+      "Audio"
+    ],
+    "params": "{path? | data: base64, name?, rect?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.video",
+    "label": "Video from File…",
+    "menu": [
+      "Insert",
+      "Media",
+      "Video"
+    ],
+    "params": "{path? | data: base64, name?, rect?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.wordArt",
+    "label": "WordArt",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{text?, style?: 0..}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.slideNumber",
+    "label": "Slide Number",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.dateTime",
+    "label": "Date & Time",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{format?: datetime1..datetime13, update?: bool, language?: en-US|en-GB|fr-FR|ja-JP|sv-SE} — no keys opens the dialog; in the Handout or Notes Master view it fills the selected date placeholder (else the master's own) and answers where: \"master\"",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.symbol",
+    "label": "Symbol",
+    "menu": [
+      "Insert",
+      "Symbols"
+    ],
+    "params": "{text: character(s)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.action",
+    "label": "Action Settings",
+    "menu": [
+      "Insert",
+      "Links"
+    ],
+    "params": "{on?: click|hover, action: none|next|previous|first|last|lastViewed|endShow|playMedia|slide|url|customShow|program, slide?: index, url?, show?: custom show name, path?, highlight?: bool, tooltip?, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.hyperlink",
+    "label": "Link",
+    "menu": [
+      "Insert",
+      "Links"
+    ],
+    "params": "{url? | slide?: index, tooltip?, text?: shown when nothing is selected, highlightClick?, ids?}",
+    "shortcut": "Cmd+K"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "chart.type",
+    "label": "Change Chart Type",
+    "menu": [
+      "Chart Design",
+      "Type"
+    ],
+    "params": "{type, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "chart.data",
+    "label": "Edit Data",
+    "menu": [
+      "Chart Design",
+      "Data"
+    ],
+    "params": "{categories?: [..], levels?: [[..]] (outer category levels, innermost first), series?: [{name, values}], id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "chart.options",
+    "label": "Chart Elements",
+    "menu": [
+      "Chart Design",
+      "Chart Layouts"
+    ],
+    "params": "{title?: string|null, legend?: b|t|l|r|null, dataLabels?: bool, gridlines?: bool, palette?, binCount?: n|null, binSize?: n|null, subtotals?: [point index], quartiles?: exclusive|inclusive, upDownBars?: bool, textColor?: #RRGGBB|accent1..6|tx1…|null (title, axes, legend and labels; null for PowerPoint's default: the theme's text colour at 65 % plus 35 %, 595959 on a light theme), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.smartArt",
+    "label": "SmartArt",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{kind: list|process|cycle|hierarchy|pyramid|matrix, items?: [text] (leading tabs = sub-points), nodes?: [{text, level}]} → {id}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.actionButton",
+    "label": "Action Buttons",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{kind: back|forward|beginning|end|home|information|return|movie|document|sound|help|custom, rect?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.nodes",
+    "label": "Text Pane",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?} → {id, kind, nodes: [{text, level}]} (id: the SmartArt group or one of its shapes; default the selection)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.setNodes",
+    "label": "Edit SmartArt Text",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, nodes?: [{text, level}], lines?: [string] (leading tabs set the level), index?, text?, title?} (index + text edits one node; title: its Name and Title box)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.addNode",
+    "label": "Add Shape",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, index?, position?: after|before|below|above|assistant, text?} → {index} (default: after the last node)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.removeNode",
+    "label": "Remove Shape",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, index} (its sub-points move up one level)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.promote",
+    "label": "Promote",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.demote",
+    "label": "Demote",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.layout",
+    "label": "Change Layout",
+    "menu": [
+      "SmartArt Design",
+      "Layouts"
+    ],
+    "params": "{id?, kind: list|blockList|hBulletList|process|chevron|verticalProcess|stepUp|cycle|blockCycle|radial|hierarchy|pyramid|invertedPyramid|matrix|titledMatrix|pictureList|pictureCaption|pictureProcess|pictureHList|timeline|venn|target|textCycle|continuousCycle|horizontalHierarchy|gridMatrix|gear|funnel|segmentedCycle|multidirectionalCycle|orgChart|halfCircleOrgChart|cycleMatrix|segmentedPyramid|pie|nameTitleOrgChart|verticalBoxList|trapezoidList|tableList|accentProcess|continuousBlockProcess|bendingProcess|linearVenn|stackedVenn|nestedTarget}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.fromText",
+    "label": "Convert to SmartArt",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{id?, kind?} → {id} (a text box or placeholder becomes a SmartArt graphic in its place: one node per paragraph, indent levels kept)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.toText",
+    "label": "Convert to Text",
+    "menu": [
+      "SmartArt Design",
+      "Reset"
+    ],
+    "params": "{id?} → {id} (the graphic becomes a text box of its outline, bulleted by level)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.toShapes",
+    "label": "Convert to Shapes",
+    "menu": [
+      "SmartArt Design",
+      "Reset"
+    ],
+    "params": "{id?} (the graphic becomes a plain group of its shapes; the outline is dropped)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.picture",
+    "label": "Insert Picture in SmartArt",
+    "menu": [
+      "SmartArt Design",
+      "Create Graphic"
+    ],
+    "params": "{id?, index, data?: base64 | path?: string | reset?: bool} (the node's picture placeholder in picture layouts)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.style",
+    "label": "SmartArt Styles",
+    "menu": [
+      "SmartArt Design",
+      "SmartArt Styles"
+    ],
+    "params": "{id?, style: flat|subtle|intense|outline|polished|inset|cartoon|powder|brick}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "smartArt.colors",
+    "label": "Change Colors",
+    "menu": [
+      "SmartArt Design",
+      "SmartArt Styles"
+    ],
+    "params": "{id?, colors: colorful|range23|range34|range45|range56|accent1|…|accent6|accent1Grad|…|accent6Grad}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.connect",
+    "label": "Connect Shapes",
+    "menu": [],
+    "params": "{from: shape id, to: shape id, fromSite?, toSite?: site index (default: the closest pair), id?: existing line to glue (else a new connector), preset?: straightConnector1|bentConnector3|curvedConnector3} → {id}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.freeform",
+    "label": "Freeform",
+    "menu": [
+      "Insert",
+      "Shapes"
+    ],
+    "params": "{points: [[x, y], …] slide pt (≥ 2), closed?: bool (filled shape), smooth?: bool (curve through the points)} → {id}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "draw.inkToShape",
+    "label": "Ink to Shape",
+    "menu": [
+      "Draw",
+      "Convert"
+    ],
+    "params": "{} → {shapes: [ids], kept: n} turns recognisable ink strokes on the slide into lines, rectangles, ellipses and triangles",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.sites",
+    "label": "Connection Sites",
+    "menu": [],
+    "params": "{id} → [[x, y]] connection sites in slide points",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.move",
+    "label": "Move",
+    "menu": [],
+    "params": "{dx?: pt (relative), dy?: pt (relative), ids?} | {x?: pt (absolute), y?: pt (absolute), ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.resize",
+    "label": "Size",
+    "menu": [
+      "Shape Format",
+      "Size"
+    ],
+    "params": "{w?: pt, h?: pt, lockAspect?: bool, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.setBounds",
+    "label": "Position and Size",
+    "menu": [],
+    "params": "{x, y, w, h, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.rotate",
+    "label": "Rotation",
+    "menu": [
+      "Shape Format",
+      "Arrange",
+      "Rotate"
+    ],
+    "params": "{deg?: absolute, by?: relative, ids?, gesture?: move|end}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.sizePosition",
+    "label": "Size and Position…",
+    "menu": [
+      "Shape Format",
+      "Size"
+    ],
+    "params": "{x?, y?: pt, w?, h?: pt, rot?: deg, scaleW?, scaleH?: percent of the current size (100 = unchanged), lockAspect?: bool, ids?} — with none of those keys, opens the dialog",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.flip",
+    "label": "Flip",
+    "menu": [
+      "Shape Format",
+      "Arrange",
+      "Rotate"
+    ],
+    "params": "{axis: horizontal|vertical, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.adjust",
+    "label": "Adjust Shape",
+    "menu": [],
+    "params": "{index, value (file units), ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.change",
+    "label": "Change Shape",
+    "menu": [
+      "Shape Format",
+      "Insert Shapes",
+      "Edit Shape"
+    ],
+    "params": "{preset, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.smoothCorners",
+    "label": "Smooth Corners",
+    "menu": [
+      "Shape Format",
+      "Insert Shapes",
+      "Edit Shape"
+    ],
+    "params": "{smoothing: 0..100 (%), radius?: pt (default: the rounded rectangle's own), ids?} → rectangle outline with smoothed (squircle) corners",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.fill",
+    "label": "Shape Fill",
+    "menu": [
+      "Shape Format",
+      "Shape Styles"
+    ],
+    "params": "{color? | none?: true | background?: true (the slide background shows through; shapes and text boxes only) | gradient?: {stops: [[pos 0..1, color]], kind?: linear|radial|rectangular|path, angle?: deg (linear), focus?: [l, t, r, b] fractions (radial, rectangular and path: where the first stop sits), rotateWithShape?: bool (false keeps linear and radial gradients upright on the slide; rectangular and path gradients turn with the shape when drawn)} | picture?: base64 | pattern?: {preset, fg, bg} | transparency?: 0..1 | reset?: true, ids?}; pictureProps?: {tile?: bool, offsetX?, offsetY?: pt, scaleX?, scaleY?: 0..10, align?: tl|t|tr|l|ctr|r|bl|b|br, mirror?: none|x|y|xy, stretch?: [l, t, r, b] fractions, rotateWithShape?: bool} adjusts a picture fill; a group also formats its members",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.line",
+    "label": "Shape Outline",
+    "menu": [
+      "Shape Format",
+      "Shape Styles"
+    ],
+    "params": "{color?, none?, width?: pt, dash?: solid|dot|dash|lgDash|dashDot|sysDot|sysDash, cap?: flat|round|square, join?: round|bevel|miter, compound?: single|double|thickThin|thinThick|triple, head?: none|triangle|stealth|diamond|oval|arrow, tail?, headSize?: sm|med|lg, tailSize?, reset?, ids?}; a group also formats its members",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.effects",
+    "label": "Shape Effects",
+    "menu": [
+      "Shape Format",
+      "Shape Styles"
+    ],
+    "params": "{shadow?: none|outer|inner|perspective|{color, blur, dist, dir}, glow?: none|{color, radius}, softEdges?: pt, reflection?: none|tight|half|full, bevel?: none|circle|…, threeD?: {camera?: preset, rotX?, rotY?, rotZ?: deg, z?: pt, bevelTop?, bevelBottom?: none|circle|…, bevelTopW?, bevelTopH?, bevelBottomW?, bevelBottomH?, depth?, contour?: pt, material?, lighting?, reset?: true}, shadowProps?: {color?, transparency?: 0..1, size?: 0.01..2 (1 = 100%), blur?: pt, dist?: pt, dir?: deg}, glowProps?: {color?, transparency?, radius?: pt}, reflectionProps?: {transparency?, size?: 0..1, dist?: pt, blur?: pt}, reset?, ids?} (the *Props keys adjust the current effect, adding a default one when there is none)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.quickStyle",
+    "label": "Quick Styles",
+    "menu": [
+      "Home",
+      "Drawing"
+    ],
+    "params": "{index: 0..41 (theme style row×accent), ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.rename",
+    "label": "Rename",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{name, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.altText",
+    "label": "Alt Text",
+    "menu": [
+      "Shape Format",
+      "Accessibility"
+    ],
+    "params": "{text, decorative?: bool, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.visible",
+    "label": "Show/Hide",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{visible?: bool, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.lock",
+    "label": "Lock",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{locked?: bool (default: toggle), ids?} (a group locks or unlocks with everything in it)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.setDefault",
+    "label": "Set as Default Shape",
+    "menu": [],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.crop",
+    "label": "Crop",
+    "menu": [
+      "Picture Format",
+      "Size"
+    ],
+    "params": "{left?: fraction 0..1, top?: fraction 0..1, right?: fraction 0..1, bottom?: fraction 0..1, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.adjust",
+    "label": "Corrections",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{brightness?: -1..1, contrast?: -1..1, saturation?: 0..4, grayscale?: bool, transparency?: 0..1, reset?: bool, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.reset",
+    "label": "Reset Picture",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{ids?} (discards the picture's formatting: adjustments, artistic effect, crop, transparency, picture-style effects and outline; the frame shape from Change Shape or Crop to Shape, the size and the position stay)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.change",
+    "label": "Change Picture",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{path? | data: base64, name?, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.options",
+    "label": "Playback",
+    "menu": [
+      "Playback"
+    ],
+    "params": "{autoplay?, loop?, rewind?, acrossSlides?, hide?, fullScreen?, volume?: 0..1, trimStart?: ms, trimEnd?: ms, fadeIn?: ms, fadeOut?: ms, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.removeBackground",
+    "label": "Remove Background",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{tolerance?: 0..100 (how different a colour may be from the edge's, default 20), ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.style",
+    "label": "Picture Styles",
+    "menu": [
+      "Picture Format",
+      "Picture Styles"
+    ],
+    "params": "{style: simpleFrameWhite|dropShadowRectangle|softEdgeOval|… | none (see picture.styles), ids?}",
+    "shortcut": null
+  },
+  {
+    "id": "picture.styles",
+    "label": "Picture Style Gallery",
+    "menu": [],
+    "params": "{} → [{id, label}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.recolor",
+    "label": "Recolor",
+    "menu": [
+      "Picture Format",
+      "Adjust",
+      "Color"
+    ],
+    "params": "{preset: none|grayscale|sepia|washout|bw25|bw50|bw75|accent1Dark…accent6Dark|accent1Light…accent6Light|tx2Dark|tx2Light (see picture.recolors), ids?}",
+    "shortcut": null
+  },
+  {
+    "id": "picture.recolors",
+    "label": "Recolor Gallery",
+    "menu": [],
+    "params": "{} → [{id, label}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.transparentColor",
+    "label": "Set Transparent Color",
+    "menu": [
+      "Picture Format",
+      "Adjust",
+      "Color"
+    ],
+    "params": "{color: #RRGGBB | at: [x, y] | none: true, ids?} (pixels of that colour become transparent; `at` takes the colour of the picture's own pixel under that slide point, as a click does in PowerPoint)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "guide.add",
+    "label": "Add Guide",
+    "menu": [
+      "View",
+      "Show",
+      "Guides"
+    ],
+    "params": "{vertical: bool, pos?: pt (default: the slide's centre)} → {index}. `defaults: true` adds the two centre guides when there are none",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "guide.move",
+    "label": "Move Guide",
+    "menu": [],
+    "params": "{index, pos: pt}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "guide.delete",
+    "label": "Delete Guide",
+    "menu": [],
+    "params": "{index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "guide.list",
+    "label": "Guides",
+    "menu": [],
+    "params": "{} → [{vertical, pos}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.bringToFront",
+    "label": "Bring to Front",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+Shift+]"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.bringForward",
+    "label": "Bring Forward",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+]"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.sendBackward",
+    "label": "Send Backward",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+["
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.sendToBack",
+    "label": "Send to Back",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+Shift+["
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.reorder",
+    "label": "Reorder Objects",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{id, index: position among its siblings (0 = back; a group's child stays in its group)} → {index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.group",
+    "label": "Group",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+Alt+G"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.ungroup",
+    "label": "Ungroup",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{ids?}",
+    "shortcut": "Cmd+Alt+Shift+G"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.regroup",
+    "label": "Regroup",
+    "menu": [
+      "Arrange"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Alt+J"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.align",
+    "label": "Align",
+    "menu": [
+      "Arrange",
+      "Align or Distribute"
+    ],
+    "params": "{edge: left|center|right|top|middle|bottom, to?: slide|selection (default: slide for one object), ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.distribute",
+    "label": "Distribute",
+    "menu": [
+      "Arrange",
+      "Align or Distribute"
+    ],
+    "params": "{dir: horizontal|vertical, to?: slide|selection, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.rotateLeft",
+    "label": "Rotate Left 90°",
+    "menu": [
+      "Arrange",
+      "Rotate or Flip"
+    ],
+    "params": "{ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.rotateRight",
+    "label": "Rotate Right 90°",
+    "menu": [
+      "Arrange",
+      "Rotate or Flip"
+    ],
+    "params": "{ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.flipHorizontal",
+    "label": "Flip Horizontal",
+    "menu": [
+      "Arrange",
+      "Rotate or Flip"
+    ],
+    "params": "{ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.flipVertical",
+    "label": "Flip Vertical",
+    "menu": [
+      "Arrange",
+      "Rotate or Flip"
+    ],
+    "params": "{ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "arrange.nudge",
+    "label": "Nudge",
+    "menu": [],
+    "params": "{dx, dy, ids?} (arrow keys: 6 pt, with Alt 1 pt)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "selection.select",
+    "label": "Select",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{ids | id, toggle?: bool (Ctrl+click), add?: bool} → {selected}: objects in groups too; a hidden object picked from the list is shown",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "selection.showAll",
+    "label": "Show All",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{} shows every object on the slide, inside groups too",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "selection.hideAll",
+    "label": "Hide All",
+    "menu": [
+      "Selection Pane"
+    ],
+    "params": "{} hides every top-level object on the slide",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.merge",
+    "label": "Merge Shapes",
+    "menu": [
+      "Shape Format",
+      "Insert Shapes",
+      "Merge Shapes"
+    ],
+    "params": "{op: union|combine|fragment|intersect|subtract, ids?: shapes in selection order (the first one's formatting is kept)} → {ids}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.editPoints",
+    "label": "Edit Points",
+    "menu": [
+      "Shape Format",
+      "Insert Shapes",
+      "Edit Shape"
+    ],
+    "params": "{on?: bool (default: toggle), id?} — enter or leave Edit Points for one selected shape; entering turns a preset into a freeform",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.points",
+    "label": "Points",
+    "menu": [],
+    "params": "{id?} → {id, paths: [[[x, y] slide pt]], types: [[smooth|straight|corner]], segments: [[straight|curved|null]]} vertices of a freeform and the segment ending at each",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.movePoint",
+    "label": "Move Point",
+    "menu": [],
+    "params": "{path?: 0, index, x, y: slide pt, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.addPoint",
+    "label": "Add Point",
+    "menu": [],
+    "params": "{path?: 0, segment: index of the vertex ending it, t?: 0..1 (0.5), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.pointType",
+    "label": "Point Type",
+    "menu": [],
+    "params": "{path?: 0, index, type: smooth|straight|corner, id?} — smooth: handles in line and equal; straight: in line; corner: independent",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.moveHandle",
+    "label": "Move Handle",
+    "menu": [],
+    "params": "{path?: 0, index, side: in|out, x, y: slide pt, type?: smooth|straight|corner (default: read from the handles), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.deletePoint",
+    "label": "Delete Point",
+    "menu": [],
+    "params": "{path?: 0, index, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.deleteSegment",
+    "label": "Delete Segment",
+    "menu": [],
+    "params": "{path?: 0, segment: index of the vertex ending it, id?}: removes a segment of a closed outline, which opens there; it starts at the segment's end and ends at its start",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.segmentType",
+    "label": "Segment Type",
+    "menu": [],
+    "params": "{path?: 0, segment: index of the vertex ending it, type: straight|curved, id?} — straight drops the segment's handles; curved gives it handles at its thirds",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.openPath",
+    "label": "Open Path",
+    "menu": [],
+    "params": "{path?: 0, index, id?} — break a closed outline at a point, which becomes its two ends",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.closePath",
+    "label": "Close Path",
+    "menu": [],
+    "params": "{path?: 0, index: any point of the open outline, id?} — join its ends with a straight segment (one point when they meet)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "font.used",
+    "label": "Fonts in Presentation",
+    "menu": [],
+    "params": "{} → [family] (theme fonts resolved)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "font.replace",
+    "label": "Replace Fonts",
+    "menu": [
+      "Home",
+      "Editing",
+      "Replace"
+    ],
+    "params": "{from, to} — every explicit use of family `from`, theme fonts included → {replaced}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.edit",
+    "label": "Edit Text",
+    "menu": [],
+    "params": "{id?, at?: [paragraph, char], end?: bool, cell?: [row, col], notes?: bool}",
+    "shortcut": "Enter"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.exit",
+    "label": "Stop Editing Text",
+    "menu": [],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "id": "text.autocorrect",
+    "label": "AutoCorrect Options",
+    "menu": [
+      "Tools"
+    ],
+    "params": "{on?, twoInitials?, sentenceCaps?, days?, capsLock?, fractions?, ordinals?, lists?: bool, add?: [from, to], remove?: from} → the options and the replacement list",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.insert",
+    "label": "Type Text",
+    "menu": [],
+    "params": "{text} (\\n = new paragraph, \\u000b = line break)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.compose",
+    "label": "Compose Text",
+    "menu": [],
+    "params": "{text, active?: [start, end]} — an input method's composition (preedit) at the insertion point; empty text cancels it",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.commit",
+    "label": "Commit Composition",
+    "menu": [],
+    "params": "{text} — the input method's result replaces its composition, as one undo step",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.delete",
+    "label": "Delete Text",
+    "menu": [],
+    "params": "{dir?: backward|forward|wordBackward|wordForward} — the word directions are Ctrl+Backspace/Delete: they work from the start of a selection without deleting it",
+    "shortcut": "Backspace"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.deleteSurrounding",
+    "label": "Delete Surrounding Text",
+    "menu": [],
+    "params": "{before, after, bytes?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.move",
+    "label": "Move Insertion Point",
+    "menu": [],
+    "params": "{to: left|right|up|down|wordLeft|wordRight|lineStart|lineEnd|paraStart|paraEnd|paraUp|paraDown|start|end, extend?: bool} — left/right are on screen: in a right-to-left paragraph left goes forward",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.select",
+    "label": "Select Text",
+    "menu": [],
+    "params": "{anchor: [p, c], caret: [p, c]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.selectAll",
+    "label": "Select All Text",
+    "menu": [],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.selectWord",
+    "label": "Select Word",
+    "menu": [],
+    "params": "{at?: [p, c]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.selectParagraph",
+    "label": "Select Paragraph",
+    "menu": [],
+    "params": "{at?: [p, c]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.set",
+    "label": "Set Text",
+    "menu": [],
+    "params": "{id?, text, cell?: [r, c]} — replaces the whole text, keeping the first run's formatting",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.get",
+    "label": "Get Text",
+    "menu": [],
+    "params": "{id?} → {text, paragraphs}",
+    "shortcut": null
+  },
+  {
+    "id": "font.add",
+    "label": "Add Font",
+    "menu": [],
+    "params": "{data: base64 TTF/OTF/TTC} → {faces} added for this session",
+    "shortcut": null
+  },
+  {
+    "id": "font.rescan",
+    "label": "Rescan Installed Fonts",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{} → {faces, families} (fonts installed since start-up)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.bold",
+    "label": "Bold",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": "Cmd+B"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.italic",
+    "label": "Italic",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": "Cmd+I"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.underline",
+    "label": "Underline",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool, style?: sng|dbl|heavy|dotted|dash|wavy}",
+    "shortcut": "Cmd+U"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.strikethrough",
+    "label": "Strikethrough",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool, double?: bool}",
+    "shortcut": "Cmd+Shift+X"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.superscript",
+    "label": "Superscript",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": "Cmd+Shift+="
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.subscript",
+    "label": "Subscript",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": "Cmd+="
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.font",
+    "label": "Font",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{family}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.size",
+    "label": "Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{size: pt}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.grow",
+    "label": "Increase Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Shift+."
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.shrink",
+    "label": "Decrease Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Shift+,"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.color",
+    "label": "Font Color",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{color: #RRGGBB|accent1..6|tx1…|{scheme, lumMod…}}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.textTransparency",
+    "label": "Text Transparency",
+    "menu": [
+      "Shape Format",
+      "WordArt Styles"
+    ],
+    "params": "{value: 0..1} — 0 opaque, 1 invisible; keeps the text's colour (inherited colours included)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.language",
+    "label": "Language",
+    "menu": [
+      "Review",
+      "Language"
+    ],
+    "params": "{lang?, noProof?: bool} (proofing language of the selected text, and Do Not Check Spelling)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.languageAll",
+    "label": "Language for All Text",
+    "menu": [
+      "Review",
+      "Language"
+    ],
+    "params": "{lang?, noProof?: bool} (proofing language of every text in the presentation: slides, tables, notes, masters and layouts, and the default for new text; one undo step)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.highlight",
+    "label": "Text Highlight Color",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{color? (absent = none)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.case",
+    "label": "Change Case",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{mode?: cycle|sentence|lower|upper|title|toggle} — cycle (Shift+F3, the default) goes lowercase → Capitalize Each Word → UPPERCASE; a caret in a word changes that word",
+    "shortcut": "Shift+F3"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.caps",
+    "label": "Caps",
+    "menu": [],
+    "params": "{caps: none|small|all}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.spacing",
+    "label": "Character Spacing",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{pt} (veryTight -3, tight -1.5, normal 0, loose 3, veryLoose 6)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.clear",
+    "label": "Clear All Formatting",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Space"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.fontDialog",
+    "label": "Font…",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{family?, size?: pt, bold?: bool, italic?: bool, underline?: none|sng|dbl|heavy|dotted|dash|wavy, color?, strike?: none|sng|dbl, baseline?: none|super|sub|<fraction>, caps?: none|small|all, spacing?: pt} — with none of these, opens the Font dialog",
+    "shortcut": "Cmd+T"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.textShadow",
+    "label": "Text Shadow",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.textOutline",
+    "label": "Text Outline",
+    "menu": [
+      "Shape Format",
+      "WordArt Styles"
+    ],
+    "params": "{color?, width?: pt} (no color = none)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.textWarp",
+    "label": "Text Transform",
+    "menu": [
+      "Shape Format",
+      "WordArt Styles"
+    ],
+    "params": "{preset: a prstTxWarp name or none, adj?: [finite raw guide values, at most 8]} — none clears the transform; omitted adj uses the preset's defaults",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.align",
+    "label": "Align",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{align: left|center|right|justify|justifyLow|distributed}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.rtl",
+    "label": "Right-to-Left Text Direction",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{on?: bool} (off = left-to-right; switching mirrors left/right alignment)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.alignLeft",
+    "label": "Align Left",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+L"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.alignCenter",
+    "label": "Center",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+E"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.alignRight",
+    "label": "Align Right",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+R"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.justify",
+    "label": "Justify",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+J"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.bullets",
+    "label": "Bullets",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{on?: bool, char?: •|○|■|□|◆|➢|✓|–, color?, size?: % of text}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.numbering",
+    "label": "Numbering",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{on?: bool, scheme?: arabicPeriod|arabicParenR|romanUcPeriod|romanLcPeriod|alphaUcPeriod|alphaLcParenR|alphaLcPeriod, start?: n (a numbered paragraph whose start differs from that of the last numbered paragraph at its level begins a new run of numbers at n, as PowerPoint's Start at does), color?, size?: % of text}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.indent",
+    "label": "Increase List Level",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Tab"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.outdent",
+    "label": "Decrease List Level",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{}",
+    "shortcut": "Shift+Tab"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.lineSpacing",
+    "label": "Line Spacing",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{lines?: 1.0|1.5|2.0…, pt?: exactly}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.paragraph",
+    "label": "Paragraph…",
+    "menu": [
+      "Format"
+    ],
+    "params": "{align?, indentLeft?: pt, indentFirst?: pt (negative = hanging), spaceBefore?: pt, spaceAfter?: pt, lineSpacing?: lines}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.ruler",
+    "label": "Ruler",
+    "menu": [],
+    "params": "{} → {x, y, width, rotated, marginLeft, indent, tabs: [{pos, align}], defaultTab} for the paragraph with the caret (x, y: the text area's top-left in slide pt)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.paragraphDialog",
+    "label": "Paragraph…",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{align?: left|center|right|justify|justLow|distributed, indentLeft?: pt, indentRight?: pt, special?: none|first|hanging, specialBy?: pt, indentFirst?: pt, spaceBefore?: pt, spaceAfter?: pt, spaceBeforeKind?: pts|pct, spaceAfterKind?: pts|pct, lineSpacing?: lines, lineSpacingPt?: pt} — with none of these, opens the Paragraph dialog",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.tabs",
+    "label": "Tabs…",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{set?: [{pos, align?}] (replaces all), add?: {pos, align?: l|ctr|r|dec}, move?: {from, to}, remove?: pos, clear?: bool, defaultTab?: pt} on the selected paragraphs; with none of them, opens the Tabs dialog (pos in pt from the text area's left)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.anchor",
+    "label": "Align Text",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{anchor: top|middle|bottom}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.direction",
+    "label": "Text Direction",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{dir: horizontal|rotate90|rotate270|stacked}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.columns",
+    "label": "Columns",
+    "menu": [
+      "Home",
+      "Paragraph"
+    ],
+    "params": "{count?: 1-16, spacing?: pt between columns}; a key left out keeps the shape's value, and with neither the Columns dialog opens",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.autofit",
+    "label": "Autofit",
+    "menu": [
+      "Format Shape",
+      "Text Box"
+    ],
+    "params": "{mode: none|shrink|resize}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.wrap",
+    "label": "Wrap Text in Shape",
+    "menu": [
+      "Format Shape",
+      "Text Box"
+    ],
+    "params": "{on: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.margins",
+    "label": "Text Box Margins",
+    "menu": [
+      "Format Shape",
+      "Text Box"
+    ],
+    "params": "{left?: pt, top?: pt, right?: pt, bottom?: pt}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.painter",
+    "label": "Format Painter",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{sticky?: bool}",
+    "shortcut": "Cmd+Shift+C"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.painterApply",
+    "label": "Paste Formatting",
+    "menu": [],
+    "params": "{ids?}",
+    "shortcut": "Cmd+Shift+V"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "format.state",
+    "label": "Formatting State",
+    "menu": [],
+    "params": "{} → the effective formatting at the selection (font, size, bold, …)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.theme",
+    "label": "Themes",
+    "menu": [
+      "Design",
+      "Themes"
+    ],
+    "params": "{name} (see design.themes)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.browseTheme",
+    "label": "Browse for Themes…",
+    "menu": [
+      "Design",
+      "Themes"
+    ],
+    "params": "{path} | {name, data: base64} — apply a .pptx or .potx's slide master and layouts (slides move to the matching layouts), or a .thmx's theme",
+    "shortcut": null
+  },
+  {
+    "id": "design.themes",
+    "label": "Theme Gallery",
+    "menu": [],
+    "params": "{} → themes, colour schemes, font schemes and effect schemes",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.colors",
+    "label": "Colors",
+    "menu": [
+      "Design",
+      "Variants"
+    ],
+    "params": "{} opens Create New Theme Colors | {name} | {colors: {dk1|lt1|dk2|lt2|accent1..6|hlink|folHlink: #RRGGBB}}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.variant",
+    "label": "Variants",
+    "menu": [
+      "Design",
+      "Variants"
+    ],
+    "params": "{index: 0..3} (see design.variants)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.variants",
+    "label": "Variant Gallery",
+    "menu": [],
+    "params": "{} → the current theme's four colour variants and which is applied",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.fonts",
+    "label": "Fonts",
+    "menu": [
+      "Design",
+      "Variants"
+    ],
+    "params": "{} opens Create New Theme Fonts | {name} | {major, minor}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.effects",
+    "label": "Effects",
+    "menu": [
+      "Design",
+      "Variants"
+    ],
+    "params": "{name} (see design.themes)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.background",
+    "label": "Format Background",
+    "menu": [
+      "Design",
+      "Customize"
+    ],
+    "params": "{color? | gradient? | picture?: base64 | pattern? | style?: 1..12 | reset?, all?: bool, index?, transparency?: 0..1, pictureProps?: {tile?, offsetX?, offsetY?: pt, scaleX?, scaleY?: 0.01..10, align?, mirror?, stretch?: [l,t,r,b], rotateWithShape?}, copy?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.hideBackgroundGraphics",
+    "label": "Hide Background Graphics",
+    "menu": [
+      "Format Background"
+    ],
+    "params": "{hide?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.slideSize",
+    "label": "Slide Size",
+    "menu": [
+      "Design",
+      "Customize"
+    ],
+    "params": "{preset: widescreen|standard|…, orientation?: portrait|landscape, scale?: maximize|ensureFit|none} | {w: pt, h: pt, orientation?: portrait|landscape, scale?: maximize|ensureFit|none}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.headerFooter",
+    "label": "Header and Footer…",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{date?: bool, dateText?: fixed text, slideNumber?: bool, footer?: bool, footerText?, hideOnTitle?: bool, all?: bool (default true)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "view.slideMaster",
+    "label": "Slide Master",
+    "menu": [
+      "View",
+      "Master Views"
+    ],
+    "params": "{master?: index, layout?: index}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "view.handoutMaster",
+    "label": "Handout Master",
+    "menu": [
+      "View",
+      "Master Views"
+    ],
+    "params": "{} (creates the handout master with header, date, footer and page number if the deck has none)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "open View ▸ Handout Master first",
+    "id": "handout.placeholders",
+    "label": "Handout Placeholders",
+    "menu": [
+      "Handout Master",
+      "Placeholders"
+    ],
+    "params": "{header?: bool, date?: bool, footer?: bool, pageNumber?: bool} (show or hide each)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "view.notesMaster",
+    "label": "Notes Master",
+    "menu": [
+      "View",
+      "Master Views"
+    ],
+    "params": "{} (creates the notes master with header, date, slide image, notes body, footer and page number if the deck has none)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "open View ▸ Notes Master first",
+    "id": "notes.placeholders",
+    "label": "Notes Placeholders",
+    "menu": [
+      "Notes Master",
+      "Placeholders"
+    ],
+    "params": "{header?, date?, slideImage?, body?, footer?, pageNumber?: bool} (show or hide each)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "view.closeMaster",
+    "label": "Close Master View",
+    "menu": [
+      "Slide Master",
+      "Close"
+    ],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.insertLayout",
+    "label": "Insert Layout",
+    "menu": [
+      "Slide Master",
+      "Edit Master"
+    ],
+    "params": "{name?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.renameLayout",
+    "label": "Rename Layout",
+    "menu": [
+      "Slide Master",
+      "Edit Master"
+    ],
+    "params": "{name, master?, layout?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.deleteLayout",
+    "label": "Delete Layout",
+    "menu": [
+      "Slide Master",
+      "Edit Master"
+    ],
+    "params": "{master?, layout?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.insertPlaceholder",
+    "label": "Insert Placeholder",
+    "menu": [
+      "Slide Master",
+      "Master Layout"
+    ],
+    "params": "{kind: content|text|picture|chart|table|media, rect?: [x,y,w,h]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.preserve",
+    "label": "Preserve",
+    "menu": [
+      "Slide Master",
+      "Edit Master"
+    ],
+    "params": "{preserve?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "master.placeholders",
+    "label": "Layout Placeholders",
+    "menu": [
+      "Slide Master",
+      "Edit Master"
+    ],
+    "params": "{title?: bool, footers?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.ideas",
+    "label": "Design Ideas",
+    "menu": [],
+    "params": "{slide?} → [{id, label}] ideas for the slide",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "design.applyIdea",
+    "label": "Apply Design Idea",
+    "menu": [
+      "Home",
+      "Designer"
+    ],
+    "params": "{id, slide?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "transition.set",
+    "label": "Transition",
+    "menu": [
+      "Transitions",
+      "Transition to This Slide"
+    ],
+    "params": "{kind: none|morph|fade|push|wipe|split|reveal|cut|randomBar|shape|uncover|cover|flash|… (transition.list), option?, duration?: ms, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "transition.options",
+    "label": "Effect Options",
+    "menu": [
+      "Transitions",
+      "Transition to This Slide"
+    ],
+    "params": "{option, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "transition.timing",
+    "label": "Timing",
+    "menu": [
+      "Transitions",
+      "Timing"
+    ],
+    "params": "{duration?: ms, onClick?: bool, after?: ms | null, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "transition.sound",
+    "label": "Sound",
+    "menu": [
+      "Transitions",
+      "Timing"
+    ],
+    "params": "{builtin?: chime|click|camera|whoosh|drumRoll|laser | path? | data: base64, name?, none?: true (No Sound), stopPrevious?: true, loop?: bool (Loop Until Next Sound), index?} — the sound plays as the slide comes in",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "transition.applyAll",
+    "label": "Apply To All",
+    "menu": [
+      "Transitions",
+      "Timing"
+    ],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "id": "transition.list",
+    "label": "Transition Gallery",
+    "menu": [],
+    "params": "{} → [{id, label, category, duration, options}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.set",
+    "label": "Animation Styles",
+    "menu": [
+      "Animations",
+      "Animation"
+    ],
+    "params": "{effect: fade|fly|zoom|wipe|appear|spin|pulse|fadeOut|lines|… (animation.list), class?: entrance|emphasis|exit|path, option?, path?: [[x,y],…] or OOXML string, closed?: bool, ids?} — replaces the shapes' animations. path (motion paths): points in slide points, as offsets from where the shape sits, or the OOXML path string (slide fractions) animation.get answers",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.add",
+    "label": "Add Animation",
+    "menu": [
+      "Animations",
+      "Advanced Animation"
+    ],
+    "params": "{effect, class?, option?, path?: [[x,y],…] or OOXML string, closed?: bool, start?: onClick|withPrevious|afterPrevious, duration?: ms, delay?: ms, ids?} → {count, path?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.remove",
+    "label": "Remove Animation",
+    "menu": [
+      "Animation Pane"
+    ],
+    "params": "{index} | {ids? (all of the shapes' animations)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.move",
+    "label": "Reorder Animation",
+    "menu": [
+      "Animations",
+      "Timing"
+    ],
+    "params": "{index, to}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.timing",
+    "label": "Timing",
+    "menu": [
+      "Animations",
+      "Timing"
+    ],
+    "params": "{index? (else selected shapes), start?: onClick|withPrevious|afterPrevious, duration?: ms, delay?: ms, repeat?: n, rewind?: bool, trigger?: shape id | null}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.options",
+    "label": "Effect Options",
+    "menu": [
+      "Animations",
+      "Animation"
+    ],
+    "params": "{option?, textBuild?: asOne|byParagraph|byWord|byLetter, path?: [[x,y],…] or OOXML string, closed?: bool, index?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.clear",
+    "label": "Remove All Animations",
+    "menu": [],
+    "params": "{index?: slide}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.painter",
+    "label": "Animation Painter",
+    "menu": [
+      "Animations",
+      "Advanced Animation"
+    ],
+    "params": "{sticky?: bool, id?}",
+    "shortcut": "Alt+Shift+C"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.painterApply",
+    "label": "Apply Animation",
+    "menu": [],
+    "params": "{ids?}",
+    "shortcut": "Alt+Shift+V"
+  },
+  {
+    "id": "animation.list",
+    "label": "Animation Gallery",
+    "menu": [],
+    "params": "{} → [{id, label, class, options}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "animation.get",
+    "label": "Animations on Slide",
+    "menu": [],
+    "params": "{slide?} → [animation]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.insertRowAbove",
+    "label": "Insert Above",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{row?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.insertRowBelow",
+    "label": "Insert Below",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{row?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.insertColumnLeft",
+    "label": "Insert Left",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{col?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.insertColumnRight",
+    "label": "Insert Right",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{col?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.deleteRow",
+    "label": "Delete Rows",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{row?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.deleteColumn",
+    "label": "Delete Columns",
+    "menu": [
+      "Table Layout",
+      "Rows & Columns"
+    ],
+    "params": "{col?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.merge",
+    "label": "Merge Cells",
+    "menu": [
+      "Table Layout",
+      "Merge"
+    ],
+    "params": "{from: [r, c], to: [r, c], id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.split",
+    "label": "Split Cells",
+    "menu": [
+      "Table Layout",
+      "Merge"
+    ],
+    "params": "{cell?: [r, c] (else the edited cell), id?} | {row?: index, col?: index, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.style",
+    "label": "Table Styles",
+    "menu": [
+      "Table Design",
+      "Table Styles"
+    ],
+    "params": "{style: medium2-accent1|light1-accent2|dark1-tx1|grid|none…, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.options",
+    "label": "Table Style Options",
+    "menu": [
+      "Table Design",
+      "Table Style Options"
+    ],
+    "params": "{headerRow?: bool, totalRow?: bool, bandedRows?: bool, firstColumn?: bool, lastColumn?: bool, bandedColumns?: bool, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.cellFill",
+    "label": "Shading",
+    "menu": [
+      "Table Design",
+      "Table Styles"
+    ],
+    "params": "{color? | none?, cells?: [[r,c],…] (default: selected cells or all), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.borders",
+    "label": "Borders",
+    "menu": [
+      "Table Design",
+      "Draw Borders"
+    ],
+    "params": "{which: all|outside|inside|insideH|insideV|top|bottom|left|right|diagDown|diagUp|none, color?, width?: pt, dash?: solid|dash|dot…, cells?: [[r,c],…] (default: selected cells or all), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.cellMargins",
+    "label": "Cell Margins",
+    "menu": [
+      "Table Layout",
+      "Alignment"
+    ],
+    "params": "{preset?: normal|none|narrow|wide, left?, right?, top?, bottom?: pt, cells?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.cellAlign",
+    "label": "Align Cell Text",
+    "menu": [
+      "Table Layout",
+      "Alignment"
+    ],
+    "params": "{anchor?: top|middle|bottom (vertical; top when neither anchor nor align is given), align?: left|center|right|justify (horizontal, applied to every paragraph of the cells), cells?, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.distributeRows",
+    "label": "Distribute Rows",
+    "menu": [
+      "Table Layout",
+      "Cell Size"
+    ],
+    "params": "{id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.distributeColumns",
+    "label": "Distribute Columns",
+    "menu": [
+      "Table Layout",
+      "Cell Size"
+    ],
+    "params": "{id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.columnWidth",
+    "label": "Width",
+    "menu": [
+      "Table Layout",
+      "Cell Size"
+    ],
+    "params": "{col, width: pt, keepTotal?: bool (the next column absorbs the change), id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.rowHeight",
+    "label": "Height",
+    "menu": [
+      "Table Layout",
+      "Cell Size"
+    ],
+    "params": "{row, height: pt, id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.drawLine",
+    "label": "Draw Table",
+    "menu": [
+      "Table Design",
+      "Draw Borders"
+    ],
+    "params": "{from: [x, y], to: [x, y] slide pt, id?: table (default: the one under `from`)} splits the cells the line crosses",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.eraseLine",
+    "label": "Table Eraser",
+    "menu": [
+      "Table Design",
+      "Draw Borders"
+    ],
+    "params": "{at: [x, y] slide pt, id?, tol?: pt (default 6)} merges the two cells on either side of the nearest border",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "table.selectCells",
+    "label": "Select Cells",
+    "menu": [],
+    "params": "{from: [r,c], to: [r,c], id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.find",
+    "label": "Find",
+    "menu": [
+      "Home",
+      "Editing"
+    ],
+    "params": "{text, matchCase?: bool, wholeWords?: bool} → [{slide, shape (null = notes), cell?: [row, col], para, start, end}] (char offsets in the paragraph)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "text.replace",
+    "label": "Replace",
+    "menu": [
+      "Home",
+      "Editing"
+    ],
+    "params": "{text, with, matchCase?, wholeWords?, at?: a text.find match (replace just that one; default: replace all)} → {replaced}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.add",
+    "label": "New Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{text, x?, y?, id?: shape}",
+    "shortcut": "Cmd+Alt+M"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.reply",
+    "label": "Reply",
+    "menu": [
+      "Comments"
+    ],
+    "params": "{index, text}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.delete",
+    "label": "Delete Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{index? | all?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.resolve",
+    "label": "Resolve Thread",
+    "menu": [
+      "Comments"
+    ],
+    "params": "{index, resolved?: bool}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.list",
+    "label": "Comments",
+    "menu": [],
+    "params": "{slide?} → comments",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.next",
+    "label": "Next Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{slide?, index?} → {slide, index, text}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "comment.prev",
+    "label": "Previous Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{slide?, index?} → {slide, index, text}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.accessibility",
+    "label": "Check Accessibility",
+    "menu": [
+      "Review",
+      "Accessibility"
+    ],
+    "params": "{} → [{slide, shape, issue}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.spelling",
+    "label": "Spelling",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{lang?, ignore?:[word]} → [{slide, shape?, row?, col?, notes?, para, start, end, word, lang, suggestions}] (shapes, table cells and notes; repeated words as {repeated, deleteFrom}; runs marked noProof skipped; each run in its own language, lang? for runs without one; Hunspell dictionaries installed on the system, else a built-in list of common misspellings)",
+    "shortcut": "F7"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.spellingChange",
+    "label": "Change Spelling",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{shape, word, to, all?, para?, start?, row?, col?} → {changed} (replace the whole word in that shape's text, the one at para/start, or in every shape with all)",
+    "shortcut": null
+  },
+  {
+    "id": "review.addToDictionary",
+    "label": "Add to Dictionary",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{word} → {word, file} (append to the user dictionary file; not an undo step)",
+    "shortcut": null
+  },
+  {
+    "id": "review.dictionary",
+    "label": "Spelling Dictionary",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{lang?} → {lang, available, found, folders} (whether review.spelling has a dictionary, and which file)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.thesaurus",
+    "label": "Thesaurus",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{word? (default: the selected word, or the word at the caret)} → {word, senses: [{word, synonyms}]}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.replaceWord",
+    "label": "Insert Synonym",
+    "menu": [],
+    "params": "{with}: replace the selected word (or the word at the caret) while editing text",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.compare",
+    "label": "Compare",
+    "menu": [
+      "Review",
+      "Compare"
+    ],
+    "params": "{path} | {name, data: base64} — compare the open deck with another file → {name, changes: [{kind, slide, number, onlyIn?, revised, details}]}; each change is described from the open deck: `onlyIn: \"deck\"` is in the deck and not in the file, `onlyIn: \"file\"` is in the file and not in the deck, `changed` is in both and differs; `slide` is 0-based, `number` the editor's slide number; review.accept takes the FILE's side, so it deletes what is only in the deck (Accept All keeps the deck's last remaining slide rather than deleting it)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "review.revisions",
+    "label": "Revisions",
+    "menu": [],
+    "params": "{} → {name, changes: [{kind: inserted|deleted|changed, slide (0-based), number (editor's), onlyIn?: deck|file, revised, details}]}; `onlyIn: deck` = only in the open deck, `file` = only in the compared file; accepting takes the file's side",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "not comparing",
+    "id": "review.accept",
+    "label": "Accept Revision",
+    "menu": [
+      "Review",
+      "Compare"
+    ],
+    "params": "{index} | {all: true} — accept the compared file's side of a change (or all): what is only in the file is added, what is only in the open deck is deleted (all: true leaves the deck's last remaining slide in place), a changed slide becomes the file's",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "not comparing",
+    "id": "review.reject",
+    "label": "Reject Revision",
+    "menu": [
+      "Review",
+      "Compare"
+    ],
+    "params": "{index} | {all: true} → {rejected} (drop revisions without applying them: the open deck stays as it is; not an undo step)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "not comparing",
+    "id": "review.endCompare",
+    "label": "End Review",
+    "menu": [
+      "Review",
+      "Compare"
+    ],
+    "params": "{}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "show.fromStart",
+    "label": "Play from Start",
+    "menu": [
+      "Slide Show",
+      "Start Slide Show"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Shift+Enter"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "show.fromCurrent",
+    "label": "Play from Current Slide",
+    "menu": [
+      "Slide Show",
+      "Start Slide Show"
+    ],
+    "params": "{}",
+    "shortcut": "Cmd+Enter"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "show.setup",
+    "label": "Set Up Slide Show…",
+    "menu": [
+      "Slide Show",
+      "Set Up"
+    ],
+    "params": "{type?: speaker|browsed|kiosk, loop?: bool, noNarration?, noAnimation?, useTimings?, showMediaControls?, from?, to?, custom?: name}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "show.customShow",
+    "label": "Custom Slide Show",
+    "menu": [
+      "Slide Show",
+      "Start Slide Show"
+    ],
+    "params": "{name, slides: [index]} | {name, delete: true}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "document.inspect",
+    "label": "Inspect Presentation",
+    "menu": [],
+    "params": "{} → slides with titles, layouts, shape counts; selection; size; theme",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.inspect",
+    "label": "Inspect Slide",
+    "menu": [],
+    "params": "{index?} → the slide's shapes with ids, kinds, boxes, text, fills, animations, transition, notes (text, and notesBody with its formatting)",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "slide.actions",
+    "label": "Inspect Slide Actions",
+    "menu": [],
+    "params": "{index?} → {index, slideId, actions: [{owner, event, type, target, hyperlink}]}; lists shape click/hover actions and text-run links/hover actions (including table cells) without executing them",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "shape.inspect",
+    "label": "Inspect Shape",
+    "menu": [],
+    "params": "{id} → full shape JSON plus its effective box",
+    "shortcut": null
+  },
+  {
+    "id": "commands.list",
+    "label": "List Commands",
+    "menu": [],
+    "params": "{filter?: substring} → [{id, label, params, enabled}]",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.play",
+    "label": "Play",
+    "menu": [
+      "Playback",
+      "Preview"
+    ],
+    "params": "{id?, from?: ms}",
+    "shortcut": "Alt+P"
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.pause",
+    "label": "Pause",
+    "menu": [
+      "Playback",
+      "Preview"
+    ],
+    "params": "{id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.toggle",
+    "label": "Play/Pause",
+    "menu": [],
+    "params": "{id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.stop",
+    "label": "Stop",
+    "menu": [
+      "Playback",
+      "Preview"
+    ],
+    "params": "{id?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.seek",
+    "label": "Seek",
+    "menu": [],
+    "params": "{id?, ms}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.info",
+    "label": "Media Info",
+    "menu": [],
+    "params": "{id?} → {id, name, contentType, bytes, durationMs, video, width, height, probe: {container, audio?, video?}, options, status?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.posterFrame",
+    "label": "Poster Frame",
+    "menu": [
+      "Video Format",
+      "Adjust"
+    ],
+    "params": "{id?, ms?: frame time (default: current position)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "media.gifPlay",
+    "label": "Play/Pause GIF",
+    "menu": [],
+    "params": "{id?, play?: bool (default: toggle)} → {id, playing}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.artisticEffect",
+    "label": "Artistic Effects",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{effect: none|artisticBlur|artisticPencilGrayscale|artisticLineDrawing|artisticFilmGrain|artisticCutout|artisticGlowEdges|artisticPhotocopy, ids?}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "insert.zoom",
+    "label": "Zoom",
+    "menu": [
+      "Insert",
+      "Links"
+    ],
+    "params": "{kind?: slide|section|summary (default slide); slides?: [index] (slide and summary zooms); sections?: [index] (section zoom); returnToZoom?: bool (default: on for section and summary, off for slide)}",
+    "shortcut": null
+  },
+  {
+    "disabled_reason": "no presentation open",
+    "id": "picture.compress",
+    "label": "Compress Pictures",
+    "menu": [
+      "Picture Format",
+      "Adjust"
+    ],
+    "params": "{ppi?: 330|220|150|96 (default 220), deleteCropped?: bool (default true), all?: bool (every picture in the presentation; default the selected pictures), ids?} → {pictures, before, after}",
+    "shortcut": null
+  }
+]

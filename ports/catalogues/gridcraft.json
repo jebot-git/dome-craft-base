@@ -1,0 +1,4005 @@
+[
+  {
+    "id": "file.new",
+    "label": "New Workbook",
+    "menu": [
+      "File"
+    ],
+    "params": "{sample?: \"budget\"|\"sales\"|\"grades\"}",
+    "shortcut": "Cmd+N",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.open",
+    "label": "Open…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path} | {name, base64}, plus {password} for a password-protected workbook and {csvAsText?: bool} to keep every csv/tsv/txt field as text, with no number or date conversion (xlsx, xlsm, xls import, xlsb and ods data import, csv, tsv, txt, json)",
+    "shortcut": "Cmd+O",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.save",
+    "label": "Save",
+    "menu": [
+      "File"
+    ],
+    "params": "{path?} (xlsx by default; .csv/.tsv/.json/.html/.pdf by extension)",
+    "shortcut": "Cmd+S",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.saveAs",
+    "label": "Save As…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path} (.xlsx, .csv, .tsv, .json, .html, or .pdf: a PDF of the active sheet)",
+    "shortcut": "Cmd+Shift+S",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.saveBytes",
+    "label": "Encode Workbook",
+    "menu": [],
+    "params": "{format?: xlsx|csv|tsv|json|html} → {base64}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.close",
+    "label": "Close",
+    "menu": [
+      "File"
+    ],
+    "params": "{force?: bool, document?: bool} (closes the active window, or with `document` the workbook and all its windows; the workbook closes with its last window)",
+    "shortcut": "Cmd+W",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.exportCsv",
+    "label": "Export as CSV",
+    "menu": [
+      "File",
+      "Export"
+    ],
+    "params": "{path, sheet?, values?: bool} → {path, bytes}: writes the cells as displayed, like Excel's Save As CSV; `values: true` writes raw values instead (full-precision numbers, ISO 8601 dates and times, TRUE/FALSE)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.exportHtml",
+    "label": "Save as Web Page",
+    "menu": [
+      "File",
+      "Export"
+    ],
+    "params": "{path}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.properties",
+    "label": "Properties",
+    "menu": [
+      "File"
+    ],
+    "params": "{title?, subject?, author?, company?, keywords?, description?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.options",
+    "label": "Options",
+    "menu": [
+      "File"
+    ],
+    "params": "{} → {calculation: {mode, iterative, maxIterations, maxChange, precisionAsDisplayed}} for the active workbook (the interface opens File › Options; change settings with their own commands, e.g. formulas.calculationOptions, view.theme, app.language.set)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "window.activate",
+    "label": "Switch Window",
+    "menu": [
+      "Window"
+    ],
+    "params": "{window} | {doc} | {index} (a window id, a workbook id, or the workbook's position in the list)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "window.close",
+    "label": "Close Window",
+    "menu": [
+      "Window"
+    ],
+    "params": "{window?, doc?, force?: bool} → {closed, document}: closes a window (the active one by default); its workbook closes with its last window, asking first when it has unsaved changes unless `force`",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "window.list",
+    "label": "Windows",
+    "menu": [
+      "Window"
+    ],
+    "params": "{} → [{window, doc, index, title, dirty, active, hidden}]",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "cell.set",
+    "label": "Enter Cell",
+    "menu": [],
+    "params": "{cell?: \"B2\", input: \"text, number or =formula\", sheet?, array?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "range.setValues",
+    "label": "Set Values",
+    "menu": [],
+    "params": "{range?: \"A1\", values: [[...]] (rows of numbers/strings/bools/null; strings starting with = are formulas), parse?: bool (default true: a string goes through typed input, so \"05.04.2026\" becomes a date and \"2.500\" a number, by en-US rules; false stores every other string as the text it is, so a dd.mm.yyyy date or a thousands separator survives, a leading ' is kept and an empty string clears the cell)} → {cells, convertedCount, converted: [{cell, input, stored}] (up to 20 of the strings typed input read as a number, date, time, boolean or error, so a script can notice)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "range.fill",
+    "label": "Fill Range With Input",
+    "menu": [],
+    "params": "{range?, input}: enters the same input in every selected cell (relative formulas adjust)",
+    "shortcut": "Ctrl+Enter",
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.set",
+    "label": "Select",
+    "menu": [],
+    "params": "{range: \"A1:B2,D4\" | cell, active?: \"A1\", sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.move",
+    "label": "Move Selection",
+    "menu": [],
+    "params": "{dr, dc, extend?: bool, jump?: bool (Ctrl+arrow), page?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.next",
+    "label": "Next Cell in Selection",
+    "menu": [],
+    "params": "{forward?: true, byRow?: false} (Enter/Tab inside a selection)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.nextCorner",
+    "label": "Next Corner of Selection",
+    "menu": [],
+    "params": "{} (the active cell moves clockwise to the next corner of the selected area, which stays selected)",
+    "shortcut": "Ctrl+.",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.selectAll",
+    "label": "Select All",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{} (current region first, then the whole sheet)",
+    "shortcut": "Cmd+A",
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.currentRegion",
+    "label": "Select Current Region",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Ctrl+Shift+8",
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.row",
+    "label": "Select Entire Row",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Shift+Space",
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.column",
+    "label": "Select Entire Column",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Ctrl+Space",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.goTo",
+    "label": "Go To…",
+    "menu": [
+      "Home",
+      "Editing",
+      "Find & Select"
+    ],
+    "params": "{reference: \"B5\" | \"Sheet2!A1:C3\" | name | \"Sheet2!Name\" | \"B14:C22,F19:G30\" | \"Price, Type\", record?: bool} (record: keep a reference without names among the recent ones) or {list: true} → {names, recent}",
+    "shortcut": "Ctrl+G",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.goToSpecial",
+    "label": "Go To Special…",
+    "menu": [
+      "Home",
+      "Editing",
+      "Find & Select"
+    ],
+    "params": "{kind: blanks|constants|formulas|comments|lastCell|currentRegion|visible|conditionalFormats|dataValidation|errors|numbers|text}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "nothing to undo",
+    "id": "edit.undo",
+    "label": "Undo",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{steps?: 1}",
+    "shortcut": "Cmd+Z",
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "nothing to redo",
+    "id": "edit.redo",
+    "label": "Redo",
+    "menu": [
+      "Edit"
+    ],
+    "params": "{steps?: 1}",
+    "shortcut": "Cmd+Y",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.copy",
+    "label": "Copy",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{range?, html?: bool} → {range, text, html?} (html: a styled HTML table, only when requested and small enough)",
+    "shortcut": "Cmd+C",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.cut",
+    "label": "Cut",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{range?, html?: bool} → {range, text, html?} (html: a styled HTML table, only when requested and small enough)",
+    "shortcut": "Cmd+X",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.paste",
+    "label": "Paste",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{at?: \"C3\", text?: \"tab-separated text from the system clipboard\", html?: \"the clipboard's HTML flavour; cells the source recorded as numbers (x:num, sdval) stay numbers\"}",
+    "shortcut": "Cmd+V",
+    "shortcut_mac": null
+  },
+  {
+    "id": "range.move",
+    "label": "Drag and Drop",
+    "menu": [],
+    "params": "{range?, to: \"C3\", overwrite?: bool} (drag the selection's border: a cut and paste that asks before replacing data unless overwrite)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "the clipboard is empty",
+    "id": "edit.pasteSpecial",
+    "label": "Paste Special…",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{what: all|formulas|values|formats|comments|validation|allExceptBorders|columnWidths|formulasAndNumberFormats|valuesAndNumberFormats, operation?: none|add|subtract|multiply|divide, skipBlanks?, transpose?, link?}",
+    "shortcut": "Ctrl+Alt+V",
+    "shortcut_mac": "Ctrl+Cmd+V"
+  },
+  {
+    "id": "edit.clearClipboard",
+    "label": "Cancel Copy",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Escape",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.clearAll",
+    "label": "Clear All",
+    "menu": [
+      "Home",
+      "Editing",
+      "Clear"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.clearFormats",
+    "label": "Clear Formats",
+    "menu": [
+      "Home",
+      "Editing",
+      "Clear"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.clearContents",
+    "label": "Clear Contents",
+    "menu": [
+      "Home",
+      "Editing",
+      "Clear"
+    ],
+    "params": "{range?}",
+    "shortcut": "Delete",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.clearComments",
+    "label": "Clear Comments and Notes",
+    "menu": [
+      "Home",
+      "Editing",
+      "Clear"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.clearHyperlinks",
+    "label": "Clear Hyperlinks",
+    "menu": [
+      "Home",
+      "Editing",
+      "Clear"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.fillDown",
+    "label": "Fill Down",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+D",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.fillRight",
+    "label": "Fill Right",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+R",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.fillUp",
+    "label": "Fill Up",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.fillLeft",
+    "label": "Fill Left",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.autoFill",
+    "label": "AutoFill",
+    "menu": [],
+    "params": "{source: \"A1:A2\", target: \"A1:A10\", mode?: series|alternate|copy|formats|values|extend|days|weekdays|months|years}: the fill-handle drag (alternate = Ctrl+drag: a lone number counts up, any other series copies; values = Fill Without Formatting: the series, targets keep their formats; extend = Fill Series: the series, and a lone number counts up; days, weekdays, months, years = Fill Days, Fill Weekdays, Fill Months, Fill Years: dates step by one unit, or by the difference between the first two dates in that unit, and weekdays skip Saturday and Sunday)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.fillSeries",
+    "label": "Series…",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?, direction?: columns|rows, type?: linear|growth|date|autofill, step?: 1, stop?, dateUnit?: day|weekday|month|year}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.flashFill",
+    "label": "Flash Fill",
+    "menu": [
+      "Home",
+      "Editing",
+      "Fill"
+    ],
+    "params": "{range?}",
+    "shortcut": "Ctrl+E",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.find",
+    "label": "Find…",
+    "menu": [
+      "Home",
+      "Editing",
+      "Find & Select"
+    ],
+    "params": "{what, matchCase?, wholeCell?, lookIn?: formulas|values, byColumns?, all?: bool, within?: sheet|workbook|selection} (selection: only the selected cells; Find Next keeps them selected and moves the active cell)",
+    "shortcut": "Cmd+F",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.replace",
+    "label": "Replace…",
+    "menu": [
+      "Home",
+      "Editing",
+      "Find & Select"
+    ],
+    "params": "{what, with, matchCase?, wholeCell?, all?: true, within?: sheet|workbook|selection} → {replaced, skipped?} (in a Python cell the code is edited; skipped counts Python cells whose code would no longer fit)",
+    "shortcut": "Ctrl+H",
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.formatPainter",
+    "label": "Format Painter",
+    "menu": [
+      "Home",
+      "Clipboard"
+    ],
+    "params": "{sticky?: bool} — first call picks up the selection's formats; with {apply: \"C3:D4\"} pastes them",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "edit.beginEdit",
+    "label": "Edit Cell",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "F2",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.bold",
+    "label": "Bold",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?: bool}",
+    "shortcut": "Cmd+B",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.italic",
+    "label": "Italic",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": "Cmd+I",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.underline",
+    "label": "Underline",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?, style?: single|double|singleAccounting|doubleAccounting}",
+    "shortcut": "Cmd+U",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.doubleUnderline",
+    "label": "Double Underline",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.strikethrough",
+    "label": "Strikethrough",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": "Cmd+Shift+X",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.superscript",
+    "label": "Superscript",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.subscript",
+    "label": "Subscript",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.fontName",
+    "label": "Font",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, name: \"Calibri\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.fontSize",
+    "label": "Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, size: 11}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.increaseFontSize",
+    "label": "Increase Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+Shift+>",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.decreaseFontSize",
+    "label": "Decrease Font Size",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+Shift+<",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.fontColor",
+    "label": "Font Color",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, color: \"#C00000\" | \"auto\" | {theme: 4, tint: -0.25}}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.fillColor",
+    "label": "Fill Color",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, color: \"#FFFF00\" | \"none\" | {theme, tint}}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.borders",
+    "label": "Borders",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range?, preset: bottom|top|left|right|none|all|outside|thickOutside|thickBottom|doubleBottom|topBottom|topThickBottom|topDoubleBottom|insideHorizontal|insideVertical|inside|diagonalDown|diagonalUp, style?: thin|medium|thick|dashed|dotted|double|hair…, color?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.formatCells",
+    "label": "Format Cells…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{range?, style: {font?, fill?, borders?, align?: {reading_order?: Context|LeftToRight|RightToLeft|null, ...}, numFmt?, protection?}} (partial Style JSON merged in; null clears reading_order)",
+    "shortcut": "Cmd+1",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.alignLeft",
+    "label": "Align Left",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+L",
+    "shortcut_mac": "Cmd+L"
+  },
+  {
+    "id": "home.alignCenter",
+    "label": "Center",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": "Cmd+E",
+    "shortcut_mac": "Cmd+E"
+  },
+  {
+    "id": "home.alignRight",
+    "label": "Align Right",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.justify",
+    "label": "Justify",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.alignTop",
+    "label": "Top Align",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.alignMiddle",
+    "label": "Middle Align",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.alignBottom",
+    "label": "Bottom Align",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.wrapText",
+    "label": "Wrap Text",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.shrinkToFit",
+    "label": "Shrink to Fit",
+    "menu": [],
+    "params": "{range?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.increaseIndent",
+    "label": "Increase Indent",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": "Ctrl+Alt+Tab",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.decreaseIndent",
+    "label": "Decrease Indent",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": "Ctrl+Alt+Shift+Tab",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.orientation",
+    "label": "Orientation",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?, angle: -90..90 | \"vertical\" | \"counterclockwise\" | \"clockwise\" | \"up\" | \"down\" | 0}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.mergeCenter",
+    "label": "Merge & Center",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.mergeAcross",
+    "label": "Merge Across",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.mergeCells",
+    "label": "Merge Cells",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.unmergeCells",
+    "label": "Unmerge Cells",
+    "menu": [
+      "Home",
+      "Alignment"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.numberFormat",
+    "label": "Number Format",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?, format: \"General\"|\"Number\"|\"Currency\"|\"Accounting\"|\"Short Date\"|\"Long Date\"|\"Time\"|\"Percentage\"|\"Fraction\"|\"Scientific\"|\"Text\" | code: \"0.00\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.accounting",
+    "label": "Accounting Number Format",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?, symbol?: \"$\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.percent",
+    "label": "Percent Style",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?}",
+    "shortcut": "Ctrl+Shift+%",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.comma",
+    "label": "Comma Style",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.increaseDecimal",
+    "label": "Increase Decimal",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.decreaseDecimal",
+    "label": "Decrease Decimal",
+    "menu": [
+      "Home",
+      "Number"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.cellStyle",
+    "label": "Cell Styles",
+    "menu": [
+      "Home",
+      "Styles"
+    ],
+    "params": "{range?, name: \"Good\"|\"Bad\"|\"Neutral\"|\"Heading 1\"|\"Title\"|\"Total\"|\"Accent1\"…|\"Normal\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.rowHeight",
+    "label": "Row Height…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, rows?: \"2:5\" | \"2:2,4:5\" | \"Sheet2!2:5\", height: 20 (pixels) | points: 15}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.columnWidth",
+    "label": "Column Width…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, cols?: \"B:D\" | \"B:B,D:F\" | \"Sheet2!B:D\", width: 64 (pixels) | chars: 8.43}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.autofitRowHeight",
+    "label": "AutoFit Row Height",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, rows?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.autofitColumnWidth",
+    "label": "AutoFit Column Width",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, cols?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.defaultWidth",
+    "label": "Default Width…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, width: 64 (pixels)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.hideRows",
+    "label": "Hide Rows",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet?, rows?}",
+    "shortcut": "Cmd+9",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.hideColumns",
+    "label": "Hide Columns",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet?, cols?}",
+    "shortcut": "Cmd+0",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.unhideRows",
+    "label": "Unhide Rows",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet?, rows?}",
+    "shortcut": "Cmd+Shift+9",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.unhideColumns",
+    "label": "Unhide Columns",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet?, cols?}",
+    "shortcut": "Cmd+Shift+0",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.lockCell",
+    "label": "Lock Cell",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{range?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.insertRows",
+    "label": "Insert Sheet Rows",
+    "menu": [
+      "Home",
+      "Cells",
+      "Insert"
+    ],
+    "params": "{rows?: \"3:5\", count?}",
+    "shortcut": "Ctrl+Shift+=",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.insertColumns",
+    "label": "Insert Sheet Columns",
+    "menu": [
+      "Home",
+      "Cells",
+      "Insert"
+    ],
+    "params": "{cols?: \"B:C\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.deleteRows",
+    "label": "Delete Sheet Rows",
+    "menu": [
+      "Home",
+      "Cells",
+      "Delete"
+    ],
+    "params": "{rows?}",
+    "shortcut": "Cmd+-",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.deleteColumns",
+    "label": "Delete Sheet Columns",
+    "menu": [
+      "Home",
+      "Cells",
+      "Delete"
+    ],
+    "params": "{cols?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.moveColumns",
+    "label": "Move Columns",
+    "menu": [],
+    "params": "{cols?: \"B:C\", before: zero-based column index}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.insertCells",
+    "label": "Insert Cells…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Insert"
+    ],
+    "params": "{range?, shift: right|down|row|column}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "the clipboard is empty",
+    "id": "home.insertCopiedCells",
+    "label": "Insert Copied Cells",
+    "menu": [
+      "Home",
+      "Cells",
+      "Insert"
+    ],
+    "params": "{at?: \"B3\", shift?: down|right}: inserts the copied cells at `at` (the active cell) and pastes them there. Whole copied rows or columns insert whole rows or columns; other blocks shift the cells at `at` down (default) or right. A cut of whole rows or columns moves them (Insert Cut Cells)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.deleteCells",
+    "label": "Delete Cells…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Delete"
+    ],
+    "params": "{range?, shift: left|up|row|column}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.insertSheet",
+    "label": "Insert Sheet",
+    "menu": [
+      "Home",
+      "Cells",
+      "Insert"
+    ],
+    "params": "{name?, before?: index}",
+    "shortcut": "Shift+F11",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.deleteSheet",
+    "label": "Delete Sheet",
+    "menu": [
+      "Home",
+      "Cells",
+      "Delete"
+    ],
+    "params": "{sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.rename",
+    "label": "Rename Sheet",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.move",
+    "label": "Move or Copy Sheet…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, to: index, copy?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.tabColor",
+    "label": "Tab Color",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format"
+    ],
+    "params": "{sheet?, color: \"#FF0000\"|\"none\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.hide",
+    "label": "Hide Sheet",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.unhide",
+    "label": "Unhide Sheet…",
+    "menu": [
+      "Home",
+      "Cells",
+      "Format",
+      "Hide & Unhide"
+    ],
+    "params": "{sheet}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.activate",
+    "label": "Activate Sheet",
+    "menu": [],
+    "params": "{sheet: index | name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.next",
+    "label": "Next Sheet",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Ctrl+PageDown",
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.previous",
+    "label": "Previous Sheet",
+    "menu": [],
+    "params": "{}",
+    "shortcut": "Ctrl+PageUp",
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.table",
+    "label": "Table",
+    "menu": [
+      "Insert",
+      "Tables"
+    ],
+    "params": "{range?, header?: true, style?: \"TableStyleMedium2\", name?}",
+    "shortcut": "Cmd+T",
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.formatAsTable",
+    "label": "Format as Table",
+    "menu": [
+      "Home",
+      "Styles"
+    ],
+    "params": "{range?, style: \"TableStyleMedium2\", header?} (inside a table: restyles it)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.totalRow",
+    "label": "Total Row",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.bandedRows",
+    "label": "Banded Rows",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.bandedColumns",
+    "label": "Banded Columns",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.headerRow",
+    "label": "Header Row",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.firstColumn",
+    "label": "First Column",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.lastColumn",
+    "label": "Last Column",
+    "menu": [
+      "Table",
+      "Table Style Options"
+    ],
+    "params": "{table?, on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.style",
+    "label": "Table Styles",
+    "menu": [
+      "Table",
+      "Table Styles"
+    ],
+    "params": "{table?, style}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.rename",
+    "label": "Table Name",
+    "menu": [
+      "Table",
+      "Properties"
+    ],
+    "params": "{table?, name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.convertToRange",
+    "label": "Convert to Range",
+    "menu": [
+      "Table",
+      "Tools"
+    ],
+    "params": "{table?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.totalFunction",
+    "label": "Totals Function",
+    "menu": [],
+    "params": "{table?, column: \"Sales\", function: sum|average|count|countNums|max|min|stdDev|var|none}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.chart",
+    "label": "Insert Chart",
+    "menu": [
+      "Insert",
+      "Charts"
+    ],
+    "params": "{range?, type?: column|bar|line|pie|doughnut|area|scatter|bubble|radar|combo|histogram|waterfall|funnel|treemap|sunburst|boxWhisker|stock, subtype?: clustered|stacked|stacked100|markers, title?, at?: \"H2\", width?, height?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.recommendedCharts",
+    "label": "Recommended Charts",
+    "menu": [
+      "Insert",
+      "Charts"
+    ],
+    "params": "{range?, type?, subtype?} (no type: the first of insert.chartRecommendations; the ribbon button opens the dialog)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.chartRecommendations",
+    "label": "Chart Recommendations",
+    "menu": [],
+    "params": "{range?} → [{type, subtype, label}] chart types that suit the data's shape, best first",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.set",
+    "label": "Chart Properties",
+    "menu": [
+      "Chart Design"
+    ],
+    "params": "{chart?: id, type?, subtype?, title?, legend?: none|bottom|top|left|right, dataLabels?, gridlines?, dataTable?: bool, dataTableKeys?: bool, dataTableHorizontalBorder?: bool, dataTableVerticalBorder?: bool, dataTableOutline?: bool (data tables: column/bar/line/area and compatible combo charts), quartiles?: exclusive|inclusive, style?, holeSize?, firstSliceAngle?, xTitle?, yTitle?, at?, width?, height?, dx?, dy?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.switchRowColumn",
+    "label": "Switch Row/Column",
+    "menu": [
+      "Chart Design",
+      "Data"
+    ],
+    "params": "{chart?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.delete",
+    "label": "Delete Chart",
+    "menu": [],
+    "params": "{chart?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.sparkline",
+    "label": "Sparklines",
+    "menu": [
+      "Insert",
+      "Sparklines"
+    ],
+    "params": "{range: \"B2:M2\", location: \"N2\", type?: line|column|winLoss, markers?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.picture",
+    "label": "Picture",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{path? | base64?: \"...\", mime?, at?: \"B2\", width?, height?, alt?, mode?: moveOnly|moveAndSize|absolute, placement?: cell|overCells}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.shape",
+    "label": "Shapes",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{kind: rectangle|roundedRectangle|ellipse|triangle|line|arrow|textBox, at?, width?, height?, text?, fill?, line?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.icons",
+    "label": "Icons",
+    "menu": [
+      "Insert",
+      "Illustrations"
+    ],
+    "params": "{name: chart|table|sum|filter|lock|comment|picture|book|folder|search|calc|check|… , at?, size?: 48, color?: hex}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.textBox",
+    "label": "Text Box",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{at?, width?, height?, text?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "shape.setText",
+    "label": "Edit Text Box",
+    "menu": [],
+    "params": "{id: textBox id, text: string}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "object.delete",
+    "label": "Delete Object",
+    "menu": [],
+    "params": "{kind: chart|image|shape|slicer|equation|control, id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "object.move",
+    "label": "Move Object",
+    "menu": [],
+    "params": "{kind: chart|image|shape|slicer|equation|control, id, at?: \"C3\", dx?, dy?, width?, height? (each at most 10,000 points, or the object's current size when a file made it larger)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "object.setAnchorMode",
+    "label": "Object Properties",
+    "menu": [],
+    "params": "{kind: chart|image|shape|slicer|equation|control, id, mode: moveAndSize|moveOnly|absolute}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.link",
+    "label": "Link",
+    "menu": [
+      "Insert",
+      "Links"
+    ],
+    "params": "{cell?, target: \"https://…\" | \"Book.xlsx\" | \"Sheet2!A1\" | \"mailto:…\", text?, tooltip?, remove?: bool}",
+    "shortcut": "Cmd+K",
+    "shortcut_mac": null
+  },
+  {
+    "id": "link.open",
+    "label": "Open Hyperlink",
+    "menu": [],
+    "params": "{url?: \"https://…\" | \"mailto:…\" | \"Sheet2!A1\", cell?} (default: the cell's link); a reference selects; a web or e-mail address is an error unless the host allows it: the user opens those by clicking the link and confirming; any scheme but http, https and mailto is always an error",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.newNote",
+    "label": "New Note",
+    "menu": [
+      "Review",
+      "Notes"
+    ],
+    "params": "{cell?, text, author?}",
+    "shortcut": "Shift+F2",
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.newComment",
+    "label": "New Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{cell?, text, author?}",
+    "shortcut": "Cmd+Shift+F2",
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.replyComment",
+    "label": "Reply",
+    "menu": [],
+    "params": "{cell?, text, author?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.resolveComment",
+    "label": "Resolve Thread",
+    "menu": [],
+    "params": "{cell?, resolved?: true}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.deleteComment",
+    "label": "Delete Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{cell?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.showNote",
+    "label": "Show/Hide Note",
+    "menu": [
+      "Review",
+      "Notes"
+    ],
+    "params": "{cell?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.symbol",
+    "label": "Symbol",
+    "menu": [
+      "Insert",
+      "Symbols"
+    ],
+    "params": "{char: \"€\"} (inserted at the end of the active cell's text)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.conditionalFormat",
+    "label": "Conditional Formatting",
+    "menu": [
+      "Home",
+      "Styles"
+    ],
+    "params": "{range?, rule: {type: cellIs|expression|containsText|beginsWith|endsWith|blanks|noBlanks|errors|noErrors|duplicate|unique|top10|aboveAverage|timePeriod|colorScale|dataBar|iconSet, operator?, value?, value2?, formula?, text?, rank?, bottom?, percent?, below?, period?, colors?: [..], color?, set?, style?: {font?: {bold?, italic?, color?}, fill?: \"#FFC7CE\" | {pattern?, fg?, bg?}, borders?, num_fmt?} (colours \"#RRGGBB\") | preset?: lightRedFill|redText|yellowFill|greenFill|redBorder|lightRedFillDarkRedText…}; a text `value` is matched as text, or kept when already a quoted literal}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.clearRules",
+    "label": "Clear Rules",
+    "menu": [
+      "Home",
+      "Styles",
+      "Conditional Formatting"
+    ],
+    "params": "{range?|sheet: true}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.manageRules",
+    "label": "Manage Rules…",
+    "menu": [
+      "Home",
+      "Styles",
+      "Conditional Formatting"
+    ],
+    "params": "{delete?: index, moveUp?: index, moveDown?: index}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.button",
+    "label": "Button",
+    "menu": [
+      "Insert",
+      "Controls"
+    ],
+    "params": "{at?: \"B2\" (or cell), dx?, dy?, width?, height?, text?, macro?: name, input?: \"selection\" | \"B2:D9\", output?: \"F2\", command?: id, params?: {..}} places a button; pressing it runs the macro or the command → {control: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.slider",
+    "label": "Slider",
+    "menu": [
+      "Insert",
+      "Controls"
+    ],
+    "params": "{at?: \"B2\" (or cell), dx?, dy?, width?, height?, link?: \"$B$1\" | \"Sheet2!$B$1\", min?: 0, max?: 100, step?: 1, page?: 10, value?, horizontal?: true} whole numbers, 0 ≤ min < max ≤ 30000, 1 ≤ step ≤ max − min, page ≥ step → {control: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.spinButton",
+    "label": "Spin Button",
+    "menu": [
+      "Insert",
+      "Controls"
+    ],
+    "params": "{at?: \"B2\" (or cell), dx?, dy?, width?, height?, link?: \"$B$1\", min?: 0, max?: 100, step?: 1, value?} whole numbers, 0 ≤ min < max ≤ 30000, 1 ≤ step ≤ max − min → {control: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "control.format",
+    "label": "Format Control",
+    "menu": [],
+    "params": "{id, text?, name?, link?: \"$B$1\" | \"\" (no link), min?, max?, step?, page?, value?, horizontal?, print?, locked?} → the control (as control.list)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "control.assign",
+    "label": "Assign Action",
+    "menu": [],
+    "params": "{id, macro?: name, input?: \"selection\" | \"B2:D9\", output?: \"F2\" | command?: id, params?: {..} | clear?: true} sets what a button runs → the control",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "control.setValue",
+    "label": "Change Control Value",
+    "menu": [],
+    "params": "{id, value} clamps the value to min..max, snaps it to the step, and writes it to the linked cell → {value}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "control.press",
+    "label": "Press Button",
+    "menu": [],
+    "params": "{id, approve?: bool, onConflict?, overwrite?} runs a button's macro or command (through the macro policy, with the workbook's trust; a workbook from a file asks first) → what the macro or command returned",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "control.list",
+    "label": "Form Controls",
+    "menu": [],
+    "params": "{} → the active sheet's controls: [{id, kind, name, text, at, link?, value, min, max, step, page, horizontal, action?}]",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.equation",
+    "label": "Equation",
+    "menu": [
+      "Insert",
+      "Symbols"
+    ],
+    "params": "{latex: \"x^2\", cell?|at?: \"B2\", size?: 11 (points), color?: hex|\"auto\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "equation.edit",
+    "label": "Edit Equation",
+    "menu": [],
+    "params": "{id, latex}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.sortAscending",
+    "label": "Sort A to Z",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{range?, column?: \"B\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.sortDescending",
+    "label": "Sort Z to A",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{range?, column?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.sort",
+    "label": "Sort…",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{range?, header?: bool, keys: [{column: \"B\", order: asc|desc, by?: values|cellColor|fontColor, customList?: [..]}], orientation?: rows|columns, matchCase?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.filter",
+    "label": "Filter",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{range?} toggles AutoFilter on the current region",
+    "shortcut": "Ctrl+Shift+L",
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.filterBy",
+    "label": "Filter Column",
+    "menu": [],
+    "params": "{column: \"B\" (or 0-based offset), values?: [..], blanks?: bool, custom?: {op: \">\", value: \"10\", op2?, value2?, and?}, top?: {count, bottom?, percent?}, aboveAverage?: bool, clear?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.clearFilter",
+    "label": "Clear",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.reapply",
+    "label": "Reapply",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.removeDuplicates",
+    "label": "Remove Duplicates",
+    "menu": [
+      "Data",
+      "Data Tools"
+    ],
+    "params": "{range?, columns?: [\"A\",\"C\"], header?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.textToColumns",
+    "label": "Text to Columns",
+    "menu": [
+      "Data",
+      "Data Tools"
+    ],
+    "params": "{range?, delimiters?: [\",\", \"\\t\", \" \", \";\"], other?: \"|\", fixedWidths?: [5, 10], treatConsecutive?: bool, textQualifier?: \"\\\"\", destination?: \"B1\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.validation",
+    "label": "Data Validation…",
+    "menu": [
+      "Data",
+      "Data Tools"
+    ],
+    "params": "{range?, type: any|whole|decimal|list|date|time|textLength|custom, operator?: between|notBetween|equal|notEqual|greater|less|greaterOrEqual|lessOrEqual, formula1, formula2?, ignoreBlank?, dropdown?, inputTitle?, inputMessage?, errorStyle?: stop|warning|information, errorTitle?, errorMessage?, clear?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.validate",
+    "label": "Check Value Against Validation",
+    "menu": [],
+    "params": "{cell?, input} → {ok, message?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.circleInvalid",
+    "label": "Circle Invalid Data",
+    "menu": [
+      "Data",
+      "Data Tools",
+      "Data Validation"
+    ],
+    "params": "{} → invalid cells",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.group",
+    "label": "Group",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{rows?: \"2:5\" | cols?: \"B:C\" | by?: rows|cols (the selection's rows or columns; a block of cells groups rows by default), sheet?}",
+    "shortcut": "Alt+Shift+Right",
+    "shortcut_mac": "Cmd+Shift+K"
+  },
+  {
+    "id": "data.ungroup",
+    "label": "Ungroup",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{rows? | cols? | by?: rows|cols, sheet?}",
+    "shortcut": "Alt+Shift+Left",
+    "shortcut_mac": "Cmd+Shift+J"
+  },
+  {
+    "id": "data.hideDetail",
+    "label": "Hide Detail",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{rows? | cols? | by?, level?: 1-7} (the innermost group, or the one at `level`, holding the lines or summarised by them)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.showDetail",
+    "label": "Show Detail",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{rows? | cols? | by?, level?: 1-7}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.showLevels",
+    "label": "Show Outline Levels",
+    "menu": [],
+    "params": "{rows?: 1-8, cols?: 1-8} (1 shows only the top-level summaries, as the outline's level buttons)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.outlineSettings",
+    "label": "Outline Settings",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{sheet?, summaryBelow?: bool, summaryRight?: bool} (summary rows below their detail, summary columns right of it; off puts them above / left) → {summaryBelow, summaryRight}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.subtotal",
+    "label": "Subtotal",
+    "menu": [
+      "Data",
+      "Outline"
+    ],
+    "params": "{range?, groupBy: \"A\", function?: sum|count|average|max|min|product, columns: [\"C\"], header?: true}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.flashFill",
+    "label": "Flash Fill",
+    "menu": [
+      "Data",
+      "Data Tools"
+    ],
+    "params": "{range?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.autoSum",
+    "label": "AutoSum",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{function?: SUM|AVERAGE|COUNT|MAX|MIN, range?}",
+    "shortcut": "Cmd+Shift+T",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.insertFunction",
+    "label": "Insert Function…",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{name?: \"VLOOKUP\"} (UI opens the dialog; with a name, starts the formula in the active cell)",
+    "shortcut": "Shift+F3",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.functions",
+    "label": "List Functions",
+    "menu": [],
+    "params": "{category?, search?} → [{name, category, signature, description}]",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.defineName",
+    "label": "Define Name…",
+    "menu": [
+      "Formulas",
+      "Defined Names"
+    ],
+    "params": "{name, refersTo?: \"=Sheet1!$A$1:$A$10\" (default: the selection), scope?: \"Workbook\"|sheet name, comment?, oldName?, oldScope?, force?: bool} (oldName: edit that name (Name Manager › Edit); a new name also renames it in formulas; a hidden name GridCraft keeps its own data in, `_gc_<key>_<n>` or `_sc_<key>`, is refused unless force is true)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.deleteName",
+    "label": "Delete Name",
+    "menu": [],
+    "params": "{name, scope?: \"Workbook\"|sheet name (default: every scope), force?: bool} (a hidden name GridCraft keeps its own data in, `_gc_<key>_<n>` or `_sc_<key>`, is refused unless force is true)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.nameManager",
+    "label": "Name Manager",
+    "menu": [
+      "Formulas",
+      "Defined Names"
+    ],
+    "params": "{} → names with values",
+    "shortcut": "Cmd+F3",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.createFromSelection",
+    "label": "Create from Selection",
+    "menu": [
+      "Formulas",
+      "Defined Names"
+    ],
+    "params": "{range?, top?: true, left?: false, bottom?: false, right?: false, replace?: false (existing names are kept and listed in `skipped`), force?: false (labels of the shape GridCraft keeps its own data in, `_gc_<key>_<n>` and `_sc_<key>`, are listed in `skipped` unless force is true)}",
+    "shortcut": "Cmd+Shift+F3",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.pasteName",
+    "label": "Paste Names…",
+    "menu": [
+      "Formulas",
+      "Defined Names"
+    ],
+    "params": "{name?: \"Sales\" (one of the names listed; OK: puts the name at the caret of the cell being edited, or starts `=Sales` in the active cell), list?: true (Paste List: writes each name and what it refers to in two columns, from `at`), at?: cell (default the active cell)} → {names: [{name, refersTo}]}: the names the Paste Name dialog lists (workbook names and the active sheet's own, hidden names left out, in alphabetical order). With neither nothing changes; the menu opens the dialog.",
+    "shortcut": "F3",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.tracePrecedents",
+    "label": "Trace Precedents",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?} → ranges",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.traceDependents",
+    "label": "Trace Dependents",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?} → cells",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.traceError",
+    "label": "Trace Error",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?} → {sheet, cell, error, source: {sheet, cell}, arrows: [{from: {sheet, range}, to: {sheet, cell}, kind: \"error\"|\"precedent\"}], truncated}: from the cell, follows the first reference that shows the same error (in a range, its first cell showing it) back to the cell the error starts in, `source`. `error` arrows link the cells on the way; `precedent` arrows lead from the source's own references into it. A cell without an error gives `error` and `source` null and no arrows. A chain longer than 10,000 links stops there with `truncated` true and `source` null.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.selectPrecedents",
+    "label": "Select Precedents",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?, all?: true = every level (Ctrl+Shift+[)} → selects the precedent cells",
+    "shortcut": "Ctrl+[",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.selectDependents",
+    "label": "Select Dependents",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?, all?: true = every level (Ctrl+Shift+])}",
+    "shortcut": "Ctrl+]",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.removeArrows",
+    "label": "Remove Arrows",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.showFormulas",
+    "label": "Show Formulas",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{on?}",
+    "shortcut": "Ctrl+`",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.convertToNumber",
+    "label": "Convert to Number",
+    "menu": [],
+    "params": "{range?} → {converted} (numbers stored as text in the range or selection become numbers)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.errorChecking",
+    "label": "Error Checking",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{} → cells with errors",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.evaluateFormula",
+    "label": "Evaluate Formula",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{cell?, formula?} → steps",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.evaluate",
+    "label": "Evaluate",
+    "menu": [],
+    "params": "{formula: \"=SUM(A1:A3)\", cell?} → value without changing the sheet; a formula that couldn't be entered in a cell is an error",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.calculateNow",
+    "label": "Calculate Now",
+    "menu": [
+      "Formulas",
+      "Calculation"
+    ],
+    "params": "{}",
+    "shortcut": "F9",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.calculateSheet",
+    "label": "Calculate Sheet",
+    "menu": [
+      "Formulas",
+      "Calculation"
+    ],
+    "params": "{}",
+    "shortcut": "Shift+F9",
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.calculationOptions",
+    "label": "Calculation Options",
+    "menu": [
+      "Formulas",
+      "Calculation"
+    ],
+    "params": "{mode?: automatic|automaticExceptTables|manual, iterative?: bool (Enable iterative calculation), maxIterations?: 1–32767 (100), maxChange?: number (0.001), precisionAsDisplayed?: bool (Set precision as displayed: numbers are stored as their format shows them; turning it on rounds every number constant permanently)} → the settings. File › Options › Formulas › Calculation options; stored in the workbook.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.protectSheet",
+    "label": "Protect Sheet…",
+    "menu": [
+      "Review",
+      "Protect"
+    ],
+    "params": "{password?, formatCells?, formatColumns?, formatRows?, insertRows?, insertColumns?, deleteRows?, deleteColumns?, sort?, autofilter?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.unprotectSheet",
+    "label": "Unprotect Sheet",
+    "menu": [
+      "Review",
+      "Protect"
+    ],
+    "params": "{password?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.protectWorkbook",
+    "label": "Protect Workbook",
+    "menu": [
+      "Review",
+      "Protect"
+    ],
+    "params": "{on?: bool (default: toggle), password?} (structure protection; unprotecting needs the password when one was set)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.workbookStatistics",
+    "label": "Workbook Statistics",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.allowEditRanges",
+    "label": "Allow Edit Ranges…",
+    "menu": [
+      "Review",
+      "Protect"
+    ],
+    "params": "{action?: list (default) | add | modify | delete | unlock, title?, range?, password?, newTitle?, sheet?} → ranges",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.checkAccessibility",
+    "label": "Check Accessibility",
+    "menu": [
+      "Review",
+      "Accessibility"
+    ],
+    "params": "{} → issues",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "there are no comments in this workbook",
+    "id": "review.previousComment",
+    "label": "Previous Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{} → {sheet, cell}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "disabled_reason": "there are no comments in this workbook",
+    "id": "review.nextComment",
+    "label": "Next Comment",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{} → {sheet, cell}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.showComments",
+    "label": "Show Comments",
+    "menu": [
+      "Review",
+      "Comments"
+    ],
+    "params": "{on?: bool} (toggles the Comments pane)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.showAllNotes",
+    "label": "Show All Notes",
+    "menu": [
+      "Review",
+      "Notes"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.convertToComments",
+    "label": "Convert to Comments",
+    "menu": [
+      "Review",
+      "Notes"
+    ],
+    "params": "{} (every note in the workbook) → {converted}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.freezePanes",
+    "label": "Freeze Panes",
+    "menu": [
+      "View",
+      "Window",
+      "Freeze Panes"
+    ],
+    "params": "{sheet?, cell?: \"B2\" (rows above and columns left of it freeze); without `cell`, unfreezes a frozen sheet}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.freezeTopRow",
+    "label": "Freeze Top Row",
+    "menu": [
+      "View",
+      "Window",
+      "Freeze Panes"
+    ],
+    "params": "{sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.freezeFirstColumn",
+    "label": "Freeze First Column",
+    "menu": [
+      "View",
+      "Window",
+      "Freeze Panes"
+    ],
+    "params": "{sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.unfreezePanes",
+    "label": "Unfreeze Panes",
+    "menu": [
+      "View",
+      "Window",
+      "Freeze Panes"
+    ],
+    "params": "{sheet?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.gridlines",
+    "label": "Gridlines",
+    "menu": [
+      "View",
+      "Show"
+    ],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.headings",
+    "label": "Headings",
+    "menu": [
+      "View",
+      "Show"
+    ],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showZeros",
+    "label": "Show Zeros",
+    "menu": [],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showOutlineSymbols",
+    "label": "Show Outline Symbols",
+    "menu": [],
+    "params": "{on?}",
+    "shortcut": "Ctrl+8",
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showObjects",
+    "label": "Show Objects",
+    "menu": [],
+    "params": "{on?}",
+    "shortcut": "Ctrl+6",
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showSheetTabs",
+    "label": "Show Sheet Tabs",
+    "menu": [],
+    "params": "{on?} (File › Options › Advanced, this workbook; toggles without `on`)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showHorizontalScrollBar",
+    "label": "Show Horizontal Scroll Bar",
+    "menu": [],
+    "params": "{on?} (this workbook; toggles without `on`)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.showVerticalScrollBar",
+    "label": "Show Vertical Scroll Bar",
+    "menu": [],
+    "params": "{on?} (this workbook; toggles without `on`)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.rightToLeft",
+    "label": "Sheet Right-to-Left",
+    "menu": [
+      "Page Layout",
+      "Sheet Options"
+    ],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.zoom",
+    "label": "Zoom",
+    "menu": [
+      "View",
+      "Zoom"
+    ],
+    "params": "{percent: 10..400}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.zoom100",
+    "label": "100%",
+    "menu": [
+      "View",
+      "Zoom"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.formulaBar",
+    "label": "Formula Bar",
+    "menu": [
+      "View",
+      "Show"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.statusBar",
+    "label": "Customize Status Bar",
+    "menu": [],
+    "params": "{average?, count?, numericalCount?, minimum?, maximum?, sum?: bool (the statistics shown for a selection; returns all six)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.zoomToSelection",
+    "label": "Zoom to Selection",
+    "menu": [
+      "View",
+      "Zoom"
+    ],
+    "params": "{viewWidth?, viewHeight?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.orientation",
+    "label": "Orientation",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{orientation: portrait|landscape}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.size",
+    "label": "Size",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{paper: Letter|Legal|A4|A3|A5|A6|Tabloid|Executive|Ledger|B4|B5|B6|B4 (ISO)|B5 (ISO)|B6 (ISO)|Japanese Postcard|Japanese Double Postcard|Japanese Envelope #3|Japanese Envelope #4|Japanese Envelope Kaku #2|Japanese Envelope Kaku #3 (B4/B5/B6 are the JIS sizes)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.margins",
+    "label": "Margins",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{preset?: normal|wide|narrow, left?, right?, top?, bottom?, header?, footer? (inches)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.printArea",
+    "label": "Set Print Area",
+    "menu": [
+      "Page Layout",
+      "Page Setup",
+      "Print Area"
+    ],
+    "params": "{range?, clear?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.printTitles",
+    "label": "Print Titles",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{rows?: \"1:1\", cols?: \"A:A\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.scaleToFit",
+    "label": "Scale to Fit",
+    "menu": [
+      "Page Layout",
+      "Scale to Fit"
+    ],
+    "params": "{scale?: 100, width?: pages, height?: pages}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.printGridlines",
+    "label": "Print Gridlines",
+    "menu": [
+      "Page Layout",
+      "Sheet Options"
+    ],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.printHeadings",
+    "label": "Print Headings",
+    "menu": [
+      "Page Layout",
+      "Sheet Options"
+    ],
+    "params": "{on?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.breaks",
+    "label": "Breaks",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{insert?: bool, remove?: bool, reset?: bool, cell?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.headerFooter",
+    "label": "Header & Footer",
+    "menu": [
+      "Insert",
+      "Text"
+    ],
+    "params": "{sheet?, header?: \"&C&P\", footer?: \"&CPage &P of &N\", differentFirst?: bool, differentOddEven?: bool, scaleWithDoc?: bool, alignWithMargins?: bool, firstHeader?, firstFooter?, evenHeader?, evenFooter?} or one section: {sheet?, page?: odd|even|first, part: header|footer, section: left|center|right, text: \"Page &[Page] of &[Pages]\"} (field names or codes) → {header, footer, differentFirst, differentOddEven, scaleWithDoc, alignWithMargins, firstHeader, firstFooter, evenHeader, evenFooter}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.theme",
+    "label": "Themes",
+    "menu": [
+      "Page Layout",
+      "Themes"
+    ],
+    "params": "{name: Craft|Slate|Meadow|Ember|Ocean|Orchid|Graphite, colors?: [12 hex], majorFont?, minorFont?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "document.inspect",
+    "label": "Inspect Workbook",
+    "menu": [],
+    "params": "{} → sheets, selection, names, tables, charts, dirty, trust (local|fromFile), history",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "sheet.read",
+    "label": "Read Range",
+    "menu": [],
+    "params": "{range?: \"A1:D10\" (default: used range), sheet?, formulas?: bool, formatted?: bool, styles?: bool (bounded native viewport)} → rows of values",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "cell.get",
+    "label": "Get Cell",
+    "menu": [],
+    "params": "{cell?, sheet?} → value, formula, display text, style, comment, link, python {code, output, typeName, preview, stale}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "selection.stats",
+    "label": "Selection Statistics",
+    "menu": [],
+    "params": "{} → count, sum, average, min, max",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "history.list",
+    "label": "Undo History",
+    "menu": [],
+    "params": "{} → undo/redo labels, grouping (an undo group is open)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "app.commands",
+    "label": "List Commands",
+    "menu": [],
+    "params": "{search?} → ids, labels, params",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.addElement",
+    "label": "Add Chart Element",
+    "menu": [
+      "Chart Design",
+      "Chart Layouts"
+    ],
+    "params": "{chart?, element: title|legend|dataLabels|dataTable|gridlines|axisTitles|smooth|trendline, on?: bool, position?: bottom|top|left|right; dataTable: dataTableKeys?: bool, dataTableHorizontalBorder?: bool, dataTableVerticalBorder?: bool, dataTableOutline?: bool; trendline: series?: index (default all), type?: linear|exponential|linearForecast|movingAverage|logarithmic|power|polynomial, order?: 2..6, period?: 2..255, forward?, backward?, displayEquation?, displayRSquared?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.quickLayout",
+    "label": "Quick Layout",
+    "menu": [
+      "Chart Design",
+      "Chart Layouts"
+    ],
+    "params": "{chart?, layout: 1..6}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.changeColors",
+    "label": "Change Colors",
+    "menu": [
+      "Chart Design",
+      "Chart Styles"
+    ],
+    "params": "{chart?, palette: colorful|monochrome|accent1..accent6 | colors: [hex…]}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.selectData",
+    "label": "Select Data…",
+    "menu": [
+      "Chart Design",
+      "Data"
+    ],
+    "params": "{chart?, range?: \"Sheet1!A1:D7\", byRows?: bool, categories?: \"Sheet1!A2:A7\" (Horizontal (Category) Axis Labels for every series; \"\" clears), removeSeries?: [index…]}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.changeType",
+    "label": "Change Chart Type…",
+    "menu": [
+      "Chart Design",
+      "Type"
+    ],
+    "params": "{chart?, type, subtype?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.move",
+    "label": "Move Chart…",
+    "menu": [
+      "Chart Design",
+      "Location"
+    ],
+    "params": "{chart?, sheet?: name (moves to that sheet), at?: \"B2\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.formatSelection",
+    "label": "Format Selection",
+    "menu": [
+      "Format",
+      "Current Selection"
+    ],
+    "params": "{chart?, series?: index, color?: hex}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.shapeFill",
+    "label": "Shape Fill",
+    "menu": [
+      "Format",
+      "Shape Styles"
+    ],
+    "params": "{chart? | kind: shape, id?, series?, color: hex}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "chart.shapeOutline",
+    "label": "Shape Outline",
+    "menu": [
+      "Format",
+      "Shape Styles"
+    ],
+    "params": "{kind: shape, id?, color: hex}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.bringForward",
+    "label": "Bring Forward",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{kind: chart|image|shape|slicer|equation|control, id, toFront?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.sendBackward",
+    "label": "Send Backward",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{kind: chart|image|shape|slicer|equation|control, id, toBack?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.selectionPane",
+    "label": "Selection Pane",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{} → objects on the sheet in stacking order",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.align",
+    "label": "Align",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{kind: chart|image|shape|slicer|equation|control, ids: [..], align: left|center|right|top|middle|bottom}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.group",
+    "label": "Group",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{kind, ids} (moves objects together: aligns their anchors to the first)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "arrange.rotate",
+    "label": "Rotate",
+    "menu": [
+      "Page Layout",
+      "Arrange"
+    ],
+    "params": "{kind: shape, id} (swaps width/height for a 90° turn; `flip` is rejected: shapes have no flip state)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.normal",
+    "label": "Normal",
+    "menu": [
+      "View",
+      "Workbook Views"
+    ],
+    "params": "{sheet?} → {view} (per sheet, saved with the file)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.pageLayout",
+    "label": "Page Layout",
+    "menu": [
+      "View",
+      "Workbook Views"
+    ],
+    "params": "{sheet?} → {view}: pages on paper with rulers; headers and footers are edited in place (per sheet, saved with the file)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.pageBreakPreview",
+    "label": "Page Break Preview",
+    "menu": [
+      "View",
+      "Workbook Views"
+    ],
+    "params": "{sheet?} → {view} (per sheet, saved with the file)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.customViews",
+    "label": "Custom Views…",
+    "menu": [
+      "View",
+      "Workbook Views"
+    ],
+    "params": "{save?: name, show?: name, delete?: name} → list",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.split",
+    "label": "Split",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{} (toggles a split at the active cell; shown as frozen panes in this version)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.newWindow",
+    "label": "New Window",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{} → {window, doc, title}: opens another window on the active workbook (the same workbook: saving from either window saves it)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.arrangeAll",
+    "label": "Arrange All",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{arrange?: tiled|horizontal|vertical|cascade, activeWorkbook?: bool} → {arrange, windows}: lays out the visible windows (tiled by default; `activeWorkbook` only the active workbook's), the active window first",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.hideWindow",
+    "label": "Hide",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{window?, doc?} (the active window by default)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.unhideWindow",
+    "label": "Unhide…",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{window?, doc?, index?} (the most recently hidden window by default)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.switchWindows",
+    "label": "Switch Windows",
+    "menu": [
+      "View",
+      "Window"
+    ],
+    "params": "{window?, doc?} → open windows [{window, doc, index, title, dirty, active, hidden}]; with `window` (an id from the list), or `doc` (a workbook id: its most recent window), shows and activates that window first",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.ruler",
+    "label": "Ruler",
+    "menu": [
+      "View",
+      "Show"
+    ],
+    "params": "{on?} → {on}: rulers in Page Layout view (an application option)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "view.macros",
+    "label": "Macros",
+    "menu": [
+      "View",
+      "Macros"
+    ],
+    "params": "{} → scripts",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.resize",
+    "label": "Resize Table",
+    "menu": [
+      "Table Design",
+      "Properties"
+    ],
+    "params": "{table?, range: \"A1:F20\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.removeDuplicates",
+    "label": "Remove Duplicates",
+    "menu": [
+      "Table Design",
+      "Tools"
+    ],
+    "params": "{table?, columns?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.fromTextCsv",
+    "label": "From Text/CSV",
+    "menu": [
+      "Data",
+      "Get & Transform Data"
+    ],
+    "params": "{path | text, delimiter?: \",\", sheet?: new sheet name} → imports into a new sheet as a table",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.getData",
+    "label": "Get Data",
+    "menu": [
+      "Data",
+      "Get & Transform Data"
+    ],
+    "params": "{path | text} (CSV/TSV/JSON array of objects) → new sheet table",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.fromTableRange",
+    "label": "From Table/Range",
+    "menu": [
+      "Data",
+      "Get & Transform Data"
+    ],
+    "params": "{range?} → copies the table/range to a new sheet as a table",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.queriesConnections",
+    "label": "Queries & Connections",
+    "menu": [
+      "Data",
+      "Queries & Connections"
+    ],
+    "params": "{} → imported tables",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.recordActions",
+    "label": "Record Actions",
+    "menu": [
+      "Automate",
+      "Scripting Tools"
+    ],
+    "params": "{stop?: bool, name?: script name when stopping}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.newScript",
+    "label": "New Script",
+    "menu": [
+      "Automate",
+      "Scripting Tools"
+    ],
+    "params": "{name, commands: [{command, params}] }",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.allScripts",
+    "label": "All Scripts",
+    "menu": [
+      "Automate",
+      "Scripting Tools"
+    ],
+    "params": "{} → saved scripts",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.runScript",
+    "label": "Run Script",
+    "menu": [],
+    "params": "{name, trusted?: bool (runs a script from an untrusted workbook this once)} — refuses scripts in a workbook opened from a file until it is trusted, and steps that reach outside the workbook (file.*, link.*, any `path` param)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.trustScripts",
+    "label": "Trust Scripts",
+    "menu": [
+      "Automate",
+      "Scripting Tools"
+    ],
+    "params": "{trusted?: bool (default true)} → {trusted}: lets this workbook's scripts run for the rest of the session",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.deleteScript",
+    "label": "Delete Script",
+    "menu": [],
+    "params": "{name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "automate.stopAction",
+    "label": "Stop Action",
+    "menu": [],
+    "params": "{} → {stopped: bool}: stops an action left running on the active workbook (an open undo group, such as a debugger's) and puts back the workbook and its undo history as they were when it began",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.checkbox",
+    "label": "Checkbox",
+    "menu": [
+      "Insert",
+      "Cell Controls"
+    ],
+    "params": "{range?} (TRUE/FALSE and empty cells draw as checkboxes, empty ones become FALSE, other values show as they are; click or Space toggles; Delete unchecks, then removes; Clear Formats removes and keeps the values)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "cell.toggleCheckbox",
+    "label": "Toggle Checkbox",
+    "menu": [],
+    "params": "{cell?}",
+    "shortcut": "Space",
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.themeColors",
+    "label": "Colors",
+    "menu": [
+      "Page Layout",
+      "Themes"
+    ],
+    "params": "{name: theme name | colors: [12 hex]}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.themeFonts",
+    "label": "Fonts",
+    "menu": [
+      "Page Layout",
+      "Themes"
+    ],
+    "params": "{major, minor}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.themeEffects",
+    "label": "Effects",
+    "menu": [
+      "Page Layout",
+      "Themes"
+    ],
+    "params": "{name} (chart effects preset; stored with the theme name)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.background",
+    "label": "Background",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{path? | clear?: bool} (sheet background picture)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.drawBorder",
+    "label": "Draw Border",
+    "menu": [
+      "Home",
+      "Font"
+    ],
+    "params": "{range, edge: top|bottom|left|right|grid, style?, color?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.newCellStyle",
+    "label": "New Cell Style…",
+    "menu": [
+      "Home",
+      "Styles"
+    ],
+    "params": "{name, fromCell?: \"A1\" (default: active cell)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "home.addIns",
+    "label": "Add-ins",
+    "menu": [
+      "Home",
+      "Add-ins"
+    ],
+    "params": "{} → GridCraft extends through MCP and scripts instead of add-ins",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.recentlyUsed",
+    "label": "Recently Used",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{} → the functions most recently entered in formulas, newest first",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.financial",
+    "label": "Financial",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.logical",
+    "label": "Logical",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.text",
+    "label": "Text",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.dateTime",
+    "label": "Date & Time",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.lookupReference",
+    "label": "Lookup & Reference",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.mathTrig",
+    "label": "Math & Trig",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.moreFunctions",
+    "label": "More Functions",
+    "menu": [
+      "Formulas",
+      "Function Library"
+    ],
+    "params": "{category?: Statistical|Engineering|Information|Database|Compatibility|Web|Cube}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.useInFormula",
+    "label": "Use in Formula",
+    "menu": [
+      "Formulas",
+      "Defined Names"
+    ],
+    "params": "{name} (inserts the name into the cell being edited)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "formulas.watchWindow",
+    "label": "Watch Window",
+    "menu": [
+      "Formulas",
+      "Formula Auditing"
+    ],
+    "params": "{add?: \"Sheet1!B5\", remove?: \"…\"} → watched cells with current values",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.list",
+    "label": "List Macros",
+    "menu": [],
+    "params": "{} → [{name, description, shortcut?, steps, inputs: [names], onConflict, permissions}]",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.get",
+    "label": "Get Macro",
+    "menu": [],
+    "params": "{name} → the macro: {v, name, description, shortcut?, inputs, steps, output, permissions}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.save",
+    "label": "Save Macro",
+    "menu": [],
+    "params": "{macro: {name, description?, shortcut?, inputs?: [{name, kind: cell|range, rows: [min, max], cols: [min, max], header, colTypes: [number|text|date|bool|any], nonEmpty, defaultRef?}], steps: [{type: command, id, params, enabled?, breakpoint?, note?} | {type: repeat, over, of: rows|columns, max, body} | {type: if, cell, op: eq|ne|gt|ge|lt|le|empty|notEmpty|contains, value, then, else} | {type: stop, message, rollback?}], output?: {anchor?, onConflict: ask|fail|overwrite|shiftDown|shiftRight}, permissions?: [command ids]} (or those fields at the top level), replace?: bool (default false: saving over a macro with the name is refused)} → {name, steps}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.delete",
+    "label": "Delete Macro",
+    "menu": [],
+    "params": "{name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.rename",
+    "label": "Rename Macro",
+    "menu": [],
+    "params": "{name, to}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.run",
+    "label": "Run Macro",
+    "menu": [],
+    "params": "{name, inputs?: {Input: \"B2:D9\"} | \"B2:D9\", output?: \"F2\" (instead of the macro's output anchor), onConflict?: ask|fail|overwrite|shiftDown|shiftRight, overwrite?: bool, approve?: bool, timeLimit?: seconds} runs as one undo step; any error rolls it all back → {macro, ran, inputs, stopped?, shifted?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.check",
+    "label": "Check Macro",
+    "menu": [],
+    "params": "{name, inputs?, output?: \"F2\" (as macro.run), onConflict?, overwrite?, timeLimit?: seconds} validates the inputs and dry-runs the macro on the workbook (then puts everything back) → {ok (macro.run with these parameters would go ahead without a question), errors?, needsApproval?, onConflict, inputs, output?, conflicts, footprint}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.record",
+    "label": "Record Macro",
+    "menu": [
+      "View",
+      "Macros"
+    ],
+    "params": "{stop?: bool, cancel?: bool (ends a recording without saving it), relative?: bool (default true; when starting), name?, shortcut?: \"Ctrl+Shift+M\" | \"M\", description?} toggles recording; when starting, the name (new and valid) and the shortcut (free) are checked and kept for the save, and without a name the macro gets the next MacroN; when stopping, a name or description given then wins (a taken name gets a suffix); with relative references the selection when it starts is the example input → {recording, name?, relative?, input?} or {recording: false, saved, steps, dropped, skipped, inputs, shortcutDropped? (the shortcut another macro took while recording)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "macro.debug",
+    "label": "Step Into",
+    "menu": [],
+    "params": "{action: start|step|continue|runTo|stop|state, name, inputs?, output?, overwrite?, approve?, timeLimit?: seconds per action (start, as macro.run), step: path (runTo), keep?: bool (stop), breakpoints?: [\"3\", \"2.1\"] (steps of the macro), breakpointsOnly?: bool (the list replaces the steps' own breakpoints)} debugs a macro one step at a time; stop keeps the changes as one undo step or rolls them back. Runs on its own, never as a step of a script or macro. Until it finishes or stops, its workbook runs only macro.debug, queries, selection and sheet changes, Go To, Find, Copy, zoom, Switch Window, Close and Stop Action (other workbooks stay editable) → {state: paused|finished|stopped|failed, current: {step, kind, command?, params?, iteration?}, lastParams, executed, changed (at most 500), changedCells, atBreakpoint?, shifted?, wroteFiles?, message?, error?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "draw.pen",
+    "label": "Pen",
+    "menu": [
+      "Draw",
+      "Tools"
+    ],
+    "params": "{on?: bool, color?: hex, width?: 2}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "draw.eraser",
+    "label": "Eraser",
+    "menu": [
+      "Draw",
+      "Tools"
+    ],
+    "params": "{on?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "draw.lasso",
+    "label": "Lasso Select",
+    "menu": [
+      "Draw",
+      "Tools"
+    ],
+    "params": "{} (selects ink by dragging; same as Select Objects)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "draw.stroke",
+    "label": "Ink Stroke",
+    "menu": [],
+    "params": "{points: [[x,y],…] in sheet points, color?: hex, width?: 2}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "draw.inkToShape",
+    "label": "Ink to Shape",
+    "menu": [
+      "Draw",
+      "Convert"
+    ],
+    "params": "{id?} converts an ink stroke (default: the last) into a rectangle, ellipse, triangle or line",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.spelling",
+    "label": "Spelling",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{range?, sheet?} → misspelled words with cells and suggestions",
+    "shortcut": "F7",
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.addToDictionary",
+    "label": "Add to Dictionary",
+    "menu": [],
+    "params": "{word}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.changeSpelling",
+    "label": "Change",
+    "menu": [],
+    "params": "{cell, word, to, all?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "review.thesaurus",
+    "label": "Thesaurus",
+    "menu": [
+      "Review",
+      "Proofing"
+    ],
+    "params": "{word} → related words (words sharing the stem in the dictionary)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.solver",
+    "label": "Solver…",
+    "menu": [
+      "Data",
+      "Analysis"
+    ],
+    "params": "{objective: \"B10\" (formula cell), goal?: max|min|value (default max), value?: number (for goal value), variables: \"B2:B4,D1\" (≤200 constant cells, same sheet), constraints?: [\"B5 <= 10\", \"B2:B4 >= C2:C4\", \"B2 int\", \"B3 bin\", {lhs: \"B6\", op: \"=\", rhs: 3 | \"C6\"}], nonNegative?: bool (default true: variables without a lower bound get 0), method?: grg|simplex|evolutionary (default grg), populationSize?: 100, mutationRate?: 0.075, randomSeed?: 0 (a fixed seed, so runs repeat), convergence?: 0.0001, generationsWithoutImprovement?: 50, requireBounds?: bool (default true: every variable needs both bounds; false searches within ±100 of the start) (Evolutionary options), keep?: bool (default true; false restores the original values), saveModel?: bool (default true: hidden names, solver_* as Excel names them, with the options; the evaluation limit and generations without improvement, which Excel lacks, as gridcraft_solver_evals and gridcraft_solver_stall), maxEvaluations?: 20000 (at most 200000), integerOptimality?: percent (default 0), saved?: bool (solve the sheet's saved model; other params override), reports?: [answer|sensitivity|limits] (written on new sheets when a solution is found)} → {status: optimal|converged|cannotImprove|iterationLimit|infeasible|unbounded|notLinear, message, objective, values: {cell: value}, original: {cell: value}, model: the model as params, evaluations, changed, reports?: [sheet names], skippedReports?: [{report: \"sensitivity\", reason}] (a Sensitivity report left out because the run did not reach an optimum or the values are not one; the solve and the other reports still apply)}. No `objective` → {model: the saved model} (the menu opens the dialog).",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.solverReport",
+    "label": "Solver Reports",
+    "menu": [],
+    "params": "{reports: [answer|sensitivity|limits], values?: {cell: number} (the solution; default the variable cells' current values), original?: {cell: number} (the values before solving; default `values`), message?: text (the result line), skipNotOptimal?: bool (default false: a Sensitivity report for values that are not optimal refuses the call; true leaves it out and writes the others), model?: data.solver params (default the sheet's saved model, with any data.solver params given here over it)} → {sheets: [names], skippedReports?: [{report, reason}]}. Writes Answer, Sensitivity and Limits reports on new sheets before the model's sheet; Sensitivity and Limits need Simplex LP or GRG Nonlinear and no integer constraints, and Sensitivity a Max or Min objective. data.solver's result can be passed as is.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.solverSaveModel",
+    "label": "Save Model",
+    "menu": [],
+    "params": "{to: \"H1\" (the first cell, on the model's sheet), model?: data.solver params (default the sheet's saved model), overwrite?: false} → {range}. Writes the model down a column as formulas: =MAX(objective), =MIN(objective) or =objective=value; =COUNT(variables); one =AND(relation) per constraint (=AND(x=INT(x)) for integer, =AND((x=0)+(x=1)) for binary), which shows TRUE while it holds; and the options as an array constant {method (1 GRG Nonlinear, 2 Simplex LP, 3 Evolutionary), non-negative (1 yes, 2 no), population size, mutation rate, random seed, require bounds (1 yes, 2 no), convergence, generations without improvement, maximum evaluations, integer optimality %}, which spills into the cells to its right. Refused, with the sheet unchanged, when the model's cells, content, another formula's spilled values, merged cells or a table are in the way of the options' spill, or it would run off the sheet, and when the column would cover another formula's spilled values. A column that holds a value or a formula (a model saved there before included) is replaced only with overwrite: true; without it the command is refused (\"already holds data\"), as Excel asks first. One undo step.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.solverLoadModel",
+    "label": "Load Model",
+    "menu": [],
+    "params": "{from: \"H1:H6\" (a range on the active sheet; one cell reads down to the first cell without a formula; a range needs a formula in every cell up to its last formula, and may end in empty cells)} → {model}. Reads a model written by Save Model and makes it the sheet's Solver model. The model must end with its options row ({…}), which Save Model writes last; a model cut short (a cell before the options row without a formula, or the options row cleared) is refused and the sheet's model stays as it was.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.solverReset",
+    "label": "Reset All",
+    "menu": [],
+    "params": "{} → {removed, masked}. Removes the active sheet's Solver model. A model read from workbook-level names stays for the other sheets and is masked on this one by an empty sheet-level solver_opt (masked: true).",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.pivotTable",
+    "label": "PivotTable",
+    "menu": [
+      "Insert",
+      "Tables"
+    ],
+    "params": "{source?: \"Sheet1!$A$1:$E$200\" | table name (default: the table or current region of the selection), destination?: \"new\" (default: new sheet before the current one, report at A3) | \"Sheet1!H3\", name?, rows?: [field | {field, group?: years|quarters|months|days}], columns?: [..], values?: [field | {field, func?, name?}], filters?: [field], replace?: bool} → {id, name, sheet, anchor, fields}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.recommendedPivotTables",
+    "label": "Recommended PivotTables",
+    "menu": [
+      "Insert",
+      "Tables"
+    ],
+    "params": "{source?, apply?: index, destination?} → suggestions [{index, title, rows, columns, values}]; with apply, creates that one",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.summarizePivot",
+    "label": "Summarize with PivotTable",
+    "menu": [
+      "Table Design",
+      "Tools"
+    ],
+    "params": "{table?, destination?} creates a PivotTable from the table",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.calculatedField",
+    "label": "Calculated Field",
+    "menu": [
+      "PivotTable Analyze",
+      "Calculations"
+    ],
+    "params": "{pivot?, name, formula?: \"=Sales*0.1\" (fields bare or 'quoted'; evaluated on each cell's sums), delete?: bool, values?: bool (add a new field to Values, default true)} adds, changes or deletes a calculated field; without `name` opens the dialog → {name, formula, calculatedFields}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.pivotChart",
+    "label": "PivotChart",
+    "menu": [
+      "Insert",
+      "Charts"
+    ],
+    "params": "{pivot?: name | id | a cell of the report (\"Sheet2!B5\"; default: the PivotTable at the active cell), type?: column|bar|line|pie|area|… (default column), subtype?, title?, at?: \"H2\", width?, height?} adds a chart bound to the PivotTable's report: categories are the innermost row items, series the column items × value fields; it follows refreshes and layout changes → {chart, pivot, series}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.fields",
+    "label": "PivotTable Fields",
+    "menu": [],
+    "params": "{pivot?} → source fields (name, numeric, date, samples, areas) and the current layout",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.fieldList",
+    "label": "Field List",
+    "menu": [
+      "PivotTable Analyze",
+      "Show"
+    ],
+    "params": "{pivot?} (same as pivot.fields)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.list",
+    "label": "PivotTables",
+    "menu": [],
+    "params": "{} → every PivotTable in the workbook",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.addField",
+    "label": "Add Field",
+    "menu": [],
+    "params": "{pivot?, field, area: rows|columns|values|filters, func?: sum|count|average|max|min|product|countNumbers|stdDev|stdDevP|var|varP, name?, position?: index, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.removeField",
+    "label": "Remove Field",
+    "menu": [],
+    "params": "{pivot?, field (or value caption), area?: rows|columns|values|filters, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.moveField",
+    "label": "Move Field",
+    "menu": [],
+    "params": "{pivot?, field (\"Σ Values\" moves the value fields between rows and columns; in columns it stays after the last field), from: rows|columns|values|filters, to: rows|columns|values|filters, position?: index, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.valueSettings",
+    "label": "Value Field Settings",
+    "menu": [
+      "PivotTable Analyze",
+      "Active Field"
+    ],
+    "params": "{pivot?, field: caption or source field | index: n, func?, name?, showAs?: normal|percentOfGrandTotal|percentOfColumnTotal|percentOfRowTotal|runningTotal|rank, numberFormat?: \"#,##0\" | null, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.filter",
+    "label": "Filter Items",
+    "menu": [],
+    "params": "{pivot?, field, selected: [\"East\", ..] | null (all), replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.sort",
+    "label": "Sort Field",
+    "menu": [],
+    "params": "{pivot?, field, order: asc|desc|none, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.group",
+    "label": "Group Field",
+    "menu": [
+      "PivotTable Analyze",
+      "Group"
+    ],
+    "params": "{pivot?, field, by: years|quarters|months|days|none, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.collapse",
+    "label": "Expand/Collapse Field",
+    "menu": [
+      "PivotTable Analyze",
+      "Active Field"
+    ],
+    "params": "{pivot?, field, items?: [labels] (default: all), collapse?: true, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.layout",
+    "label": "PivotTable Layout",
+    "menu": [
+      "PivotTable Design",
+      "Layout"
+    ],
+    "params": "{pivot?, layout?: compact|outline|tabular, grandTotalsRows?: bool, grandTotalsCols?: bool, subtotals?: bool|top|bottom|none, style?: \"PivotStyleLight16\", showHeaders?: bool, replace?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.grandTotals",
+    "label": "Grand Totals",
+    "menu": [
+      "PivotTable Design",
+      "Layout"
+    ],
+    "params": "{pivot?, mode?: off|on|rows|columns, rows?: bool, cols?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.subtotals",
+    "label": "Subtotals",
+    "menu": [
+      "PivotTable Design",
+      "Layout"
+    ],
+    "params": "{pivot?, mode: none|top|bottom}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.reportLayout",
+    "label": "Report Layout",
+    "menu": [
+      "PivotTable Design",
+      "Layout"
+    ],
+    "params": "{pivot?, layout: compact|outline|tabular}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.style",
+    "label": "PivotTable Styles",
+    "menu": [
+      "PivotTable Design",
+      "PivotTable Styles"
+    ],
+    "params": "{pivot?, style: \"PivotStyleMedium9\"}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.refresh",
+    "label": "Refresh",
+    "menu": [
+      "PivotTable Analyze",
+      "Data"
+    ],
+    "params": "{pivot?, replace?}",
+    "shortcut": "Alt+F5",
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.refreshAll",
+    "label": "Refresh All",
+    "menu": [
+      "Data",
+      "Queries & Connections"
+    ],
+    "params": "{replace?} refreshes every PivotTable → {refreshed, errors}",
+    "shortcut": "Cmd+Alt+F5",
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.changeSource",
+    "label": "Change Data Source",
+    "menu": [
+      "PivotTable Analyze",
+      "Data"
+    ],
+    "params": "{pivot?, source: \"Sheet1!$A$1:$E$300\" | table name, replace?} (fields missing from the new source are removed)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.showDetails",
+    "label": "Show Details",
+    "menu": [],
+    "params": "{cell?: \"B5\" (a value, subtotal or grand total cell of a PivotTable on the active sheet; default: the active cell)} puts the source records behind that value on a new sheet before the current one → {sheet, records}. An error when the PivotTable's Enable show details option is off (`pivot.options` `{enableShowDetails: true}` turns it on).",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.options",
+    "label": "PivotTable Options",
+    "menu": [
+      "PivotTable Analyze",
+      "PivotTable"
+    ],
+    "params": "{pivot?, enableShowDetails?: bool (Data › Enable show details: off, Show Details and double-clicking a value cell list no records)} → {enableShowDetails}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pivot.delete",
+    "label": "Delete PivotTable",
+    "menu": [
+      "PivotTable Analyze",
+      "Actions"
+    ],
+    "params": "{pivot?} clears the report and removes the PivotTable",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "python.set",
+    "label": "Set Python Code",
+    "menu": [],
+    "params": "{cell?, code, output?: object|value} makes the cell (default: the active cell) a Python cell with this code; the code must fit in Excel's 8,192-character formula once written as PY(…). `output` is the return type: `value` (an Excel value, the default) or `object` (a Python object)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "python.output",
+    "label": "Python Output",
+    "menu": [],
+    "params": "{cell?, mode?: object|value} sets the return type of a Python cell (default: the active cell): `object` (a Python object) or `value` (an Excel value). Without `mode` it switches to the other one. The cell keeps its code; a cached result of the old return type goes, as with `python.set`, so the cell shows #BLOCKED! until it runs",
+    "shortcut": "Ctrl+Alt+Shift+M",
+    "shortcut_mac": null
+  },
+  {
+    "id": "insert.slicer",
+    "label": "Slicer",
+    "menu": [
+      "Insert",
+      "Filters"
+    ],
+    "params": "{table?, column?: \"Region\", columns?: 1, at?: \"H2\", width?, height?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "table.insertSlicer",
+    "label": "Insert Slicer",
+    "menu": [
+      "Table",
+      "Tools"
+    ],
+    "params": "{table?, column?: \"Region\", columns?: 1, at?, width?, height?}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "slicer.toggle",
+    "label": "Toggle Slicer Value",
+    "menu": [],
+    "params": "{slicer?: id, value: \"East\", multi?: false}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "slicer.selectAll",
+    "label": "Clear Slicer Filter",
+    "menu": [],
+    "params": "{slicer?: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "slicer.clear",
+    "label": "Clear Slicer Filter",
+    "menu": [],
+    "params": "{slicer?: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "slicer.delete",
+    "label": "Delete Slicer",
+    "menu": [],
+    "params": "{slicer?: id}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.goalSeek",
+    "label": "Goal Seek…",
+    "menu": [
+      "Data",
+      "Forecast",
+      "What-If Analysis"
+    ],
+    "params": "{set: \"B5\" (formula cell), to: number, changing: \"B2\" (constant cell)} → {value, result, iterations, converged}. Secant search with bisection once the answer is bracketed; stops within Maximum Change (0.001) or after Maximum Iterations (100) from File › Options › Formulas. Writes the found value into `changing`.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.scenarioManager",
+    "label": "Scenario Manager…",
+    "menu": [
+      "Data",
+      "Forecast",
+      "What-If Analysis"
+    ],
+    "params": "{sheet?} → {scenarios: [{name, sheet, changing, values, comment}]} (scenarios of the active sheet; `sheet: \"*\"` lists all)",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.scenarioAdd",
+    "label": "Add Scenario",
+    "menu": [],
+    "params": "{name, changing: \"B2:B4\" or \"B2,B4\" (≤32 cells, active sheet), values?: [..] (default: the cells' current values), comment?, replace?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.scenarioShow",
+    "label": "Show Scenario",
+    "menu": [],
+    "params": "{name} writes the scenario's values into its changing cells",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.scenarioDelete",
+    "label": "Delete Scenario",
+    "menu": [],
+    "params": "{name}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.scenarioSummary",
+    "label": "Scenario Summary",
+    "menu": [],
+    "params": "{resultCells?: \"B10\" or \"B10:B12,D4\"} inserts a \"Scenario Summary\" sheet: changing cells and result cells for the current values and each scenario",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.dataTable",
+    "label": "Data Table…",
+    "menu": [
+      "Data",
+      "Forecast",
+      "What-If Analysis"
+    ],
+    "params": "{range: \"D2:E10\", rowInput?: \"B1\", columnInput?: \"B2\"} one-variable (values down the first column with columnInput, or across the top row with rowInput; formulas in the other edge) or two-variable (formula in the top-left corner). Computes every result by substitution and writes static values (a snapshot, not a live {=TABLE()}); ≤100,000 cells.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.advancedFilter",
+    "label": "Advanced…",
+    "menu": [
+      "Data",
+      "Sort & Filter"
+    ],
+    "params": "{range? (list with headers; default current region), criteria?: \"H1:I3\" (omitted/blank matches all rows; header row of field names; rows OR'ed, columns AND'ed; \">100\", \"=abc\", \"a*\", \"<>\"; blank-headed formula cells are computed criteria for the first data row), copyTo?: \"K1\" (else filter in place by hiding rows), unique?: bool}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.consolidate",
+    "label": "Consolidate…",
+    "menu": [
+      "Data",
+      "Data Tools"
+    ],
+    "params": "{sources: [\"Sheet2!A1:C10\", ..], destination?: \"A1\" (default active cell), function?: sum|count|countNums|average|max|min|product, topRow?: bool, leftColumn?: bool (consolidate by labels; else by position)}",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.forecastSheet",
+    "label": "Forecast Sheet",
+    "menu": [
+      "Data",
+      "Forecast"
+    ],
+    "params": "{timeline?: \"A2:A25\", values?: \"B2:B25\" (default: the first two columns of `range`, the selection or the current region; a text first cell is the header), end?: timeline value or date text | periods?: n (default: a third of the history, at least 1; ≤10,000 and history × periods ≤ 500,000; history ≤ 10,000 rows), forecastStart?: a timeline value or date text on the history, before its last point (hindcast: the model is fit to the points before it, the forecast columns start there and run over the actuals; default and the last point: forecast after the history), confidenceInterval?: bool (default true), confidence?: 0.95 or 95, seasonality?: \"auto\" | 0 (none) | 2–8,760, fillMissing?: interpolate|zeros, aggregate?: average|count|counta|max|median|min|sum, statistics?: bool, chart?: line|column} → {sheet, table, chart, history, periods}. Inserts a sheet before the active one: timeline, values, Forecast (FORECAST.ETS), Lower/Upper Confidence Bound (FORECAST.ETS.CONFINT), optional FORECAST.ETS.STAT table, and a chart.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "data.analysisToolPak",
+    "label": "Data Analysis…",
+    "menu": [
+      "Data",
+      "Analysis"
+    ],
+    "params": "{tool: anovaSingle|anovaTwoFactorWith|anovaTwoFactorWithout|correlation|covariance|descriptive|exponentialSmoothing|fTest|fourierAnalysis|histogram|movingAverage|randomNumberGeneration|rankPercentile|regression|sampling|tTestPaired|tTestEqual|tTestUnequal|zTest (or the tool's label), output?: \"E1\" (top-left of the report; default a new sheet), newSheet?: name, outputTo?: range|newSheet (picks between the two), overwrite?: bool (else non-empty output cells are refused), labels?: bool (first row/column holds names), groupedBy?: columns|rows, …tool params} — range tools take `range`; descriptive: summary? (default true), confidence?: 95, kthLargest?, kthSmallest?; histogram: bins?: range (default evenly spaced), pareto?, cumulative?; regression: inputY, inputX, constantZero?, confidence?: 95, residuals?, standardizedResiduals?, normalProbability?; movingAverage: interval? (3), standardErrors?; exponentialSmoothing: damping? (0.3), standardErrors?; t-tests and fTest: range1, range2, alpha? (0.05), hypothesizedDifference? (0); anovaSingle: alpha?; anovaTwoFactorWithout: range, labels? (the first row holds column names and the first column row names), alpha?; anovaTwoFactorWith: range (first row and column hold labels), rowsPerSample, alpha?; zTest: range1, range2, variance1, variance2 (known variances), alpha?, hypothesizedDifference?; fourierAnalysis: range (one row or column of 2^k numbers or complex text, at most 4096), inverse?; randomNumberGeneration: variables? (1), count (per variable; not for patterned), distribution: uniform{from, to} | normal{mean, standardDeviation} | bernoulli{p} | binomial{p, trials} | poisson{lambda} | patterned{from, to, step, repeatEach, repeatSequence} | discrete{valueRange: two columns of value and probability}, seed? (whole number, not for patterned; the same seed repeats the numbers; the result reports the seed used), at most 1,000,000 numbers; sampling: range, method?: periodic|random, period (periodic), samples (random, with replacement), seed?. Writes static values. No `tool` → {tools} (the menu opens the dialog).",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.exportPdf",
+    "label": "Export as PDF",
+    "menu": [
+      "File",
+      "Export"
+    ],
+    "params": "{path?, sheets?: active|all, range?: \"A1:F40\" (active sheet), fitToPage?: bool} → {pages, bytes, path} or {pages, bytes, base64} when no path. Honours each sheet's Page Setup.",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.print",
+    "label": "Print…",
+    "menu": [
+      "File"
+    ],
+    "params": "{path?, sheets?: active|all, range?, fitToPage?: bool} → {pages, bytes, base64} — the PDF the UI hands to the system print dialog",
+    "shortcut": "Cmd+P",
+    "shortcut_mac": null
+  },
+  {
+    "id": "file.printPreview",
+    "label": "Print Preview",
+    "menu": [
+      "File"
+    ],
+    "params": "{page? (1-based), sheets?: active|all, range?, fitToPage?} → {pages, pageList: [{page, sheet, range, rows, columns, scale, paper, orientation, pageOrder, width, height}]} in print order",
+    "shortcut": null,
+    "shortcut_mac": null
+  },
+  {
+    "id": "pageLayout.pageSetup",
+    "label": "Page Setup…",
+    "menu": [
+      "Page Layout",
+      "Page Setup"
+    ],
+    "params": "{sheet?, orientation?: portrait|landscape, paper?: Letter|Legal|A4|A3|A5|A6|Tabloid|Executive|Ledger|B4|B5|B6|B4 (ISO)|B5 (ISO)|B6 (ISO)|Japanese Postcard|Japanese Double Postcard|Japanese Envelope #3|Japanese Envelope #4|Japanese Envelope Kaku #2|Japanese Envelope Kaku #3 (B4/B5/B6 are the JIS sizes), margins?: {left,right,top,bottom,header,footer} (inches; also accepted as top-level keys), scale?: 10..400, fitWidth?, fitHeight? (pages; 0 = automatic), fitToPage?: bool, centerH?, centerV?, gridlines?, headings?, header?: \"&L&A&RPage &P of &N\", footer?, printArea?: \"A1:F50\" (\"\" clears), titleRows?: \"1:2\", titleCols?: \"A:A\", rowBreaks?: [46, 91], colBreaks?: [\"K\"], pageOrder?: downThenOver|overThenDown} → the sheet's print settings",
+    "shortcut": null,
+    "shortcut_mac": null
+  }
+]

@@ -1,0 +1,547 @@
+diff --git a/apps/deckcraft-cli/src/main.rs b/apps/deckcraft-cli/src/main.rs
+index 5701b72..8c5ca4e 100644
+--- a/apps/deckcraft-cli/src/main.rs
++++ b/apps/deckcraft-cli/src/main.rs
+@@ -40,6 +40,10 @@ fn stdout_line(args: std::fmt::Arguments<'_>) -> std::io::Result<()> {
+ }
+ 
+ fn main() -> ExitCode {
++    if let Err(error) = deckcraft_engine::validate_bitmap() {
++        eprintln!("DomeD bitmap font: {error}");
++        return ExitCode::FAILURE;
++    }
+     let args: Vec<String> = std::env::args().skip(1).collect();
+     let rest = args.get(1..).unwrap_or(&[]);
+     let asks_help = rest.iter().any(|a| a == "--help" || a == "-h");
+diff --git a/crates/engine/Cargo.toml b/crates/engine/Cargo.toml
+index cb1f4c2..896c545 100644
+--- a/crates/engine/Cargo.toml
++++ b/crates/engine/Cargo.toml
+@@ -9,6 +9,7 @@ description = "DeckCraft engine: sessions, undo history, selection, the command
+ workspace = true
+ 
+ [dependencies]
++deckcraft-anim = { workspace = true }
+ deckcraft-geom = { workspace = true }
+ deckcraft-color = { workspace = true }
+ deckcraft-model = { workspace = true }
+@@ -28,7 +29,6 @@ image = { workspace = true }
+ chrono = { workspace = true }
+ 
+ [dev-dependencies]
+-deckcraft-anim = { workspace = true }
+ zip = { workspace = true }
+ 
+ # The browser clock for comment timestamps (wasm has no std::time::SystemTime).
+diff --git a/crates/engine/src/lib.rs b/crates/engine/src/lib.rs
+index 754a64f..295cfcd 100644
+--- a/crates/engine/src/lib.rs
++++ b/crates/engine/src/lib.rs
+@@ -913,3 +913,21 @@ mod soak_tests;
+ mod tests;
+ #[cfg(test)]
+ mod tests_keys;
++
++/// Validate the downstream bitmap strike before opening documents.
++pub fn validate_bitmap() -> std::result::Result<(), String> {
++    deckcraft_fonts::bitmap::from_env().map(|_| ())
++}
++
++/// Runtime attestation for the private DomeD transport.
++pub fn bitmap_status() -> std::result::Result<serde_json::Value, String> {
++    let font = deckcraft_fonts::bitmap::from_env()?;
++    Ok(
++        serde_json::json!({"provider":"domed-bdf-v1","family":font.family,"pixels":font.pixels,"glyphs":font.glyphs.len(),"outlineFallback":false,"shaping":"harfrust-bdf","families":deckcraft_fonts::bitmap::families()}),
++    )
++}
++
++mod dome_show {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/show.rs"));
++}
++pub use dome_show::DomeShow;
+diff --git a/crates/fonts/src/fontdb.rs b/crates/fonts/src/fontdb.rs
+index 19f1904..d3a5503 100644
+--- a/crates/fonts/src/fontdb.rs
++++ b/crates/fonts/src/fontdb.rs
+@@ -175,6 +175,7 @@ enum FontBytes {
+ 
+ /// One loaded font face.
+ pub struct FontFace {
++    pub bitmap: Option<Arc<crate::bitmap::BitmapFont>>,
+     id: u32,
+     /// Typographic family name (e.g. "Source Sans 3").
+     pub family: String,
+@@ -208,7 +209,7 @@ pub struct FontFace {
+     /// Strikethrough position (top edge, above the baseline) and thickness in font units (OS/2;
+     /// 0.26 and 0.05 em when the font has none). PowerPoint draws single strikethroughs there.
+     pub strikeout: (f64, f64),
+-    pub shaper: harfrust::ShaperData,
++    pub shaper: Option<harfrust::ShaperData>,
+     /// Variable fonts: the named instance's axis settings (user units; empty = default instance),
+     /// the normalised location and the shaper's view of it.
+     pub coords: Vec<([u8; 4], f32)>,
+@@ -311,6 +312,9 @@ impl FontFace {
+     }
+     /// Does the face map `c` to a glyph?
+     pub fn covers(&self, c: char) -> bool {
++        if let Some(font) = &self.bitmap {
++            return font.gid(c) != 0;
++        }
+         let cp = c as u32;
+         if cp < 0x1_0000 {
+             let bits = self.bmp.get_or_init(|| {
+@@ -338,6 +342,9 @@ impl FontFace {
+     }
+     /// Every mapped character and its glyph id, sorted by code point (the Glyphs panel).
+     pub fn chars(&self) -> Vec<(char, u32)> {
++        if let Some(font) = &self.bitmap {
++            return font.glyphs.keys().filter_map(|cp| char::from_u32(*cp).map(|c| (c, *cp + 1))).collect();
++        }
+         let Some(f) = self.skrifa() else { return vec![] };
+         let mut v: Vec<(char, u32)> = f.charmap().mappings().filter_map(|(cp, g)| char::from_u32(cp).map(|c| (c, g.to_u32()))).collect();
+         v.sort_unstable_by_key(|x| x.0);
+@@ -346,6 +353,9 @@ impl FontFace {
+     }
+     /// Advance width of glyph `gid` in font units.
+     pub fn advance(&self, gid: u32) -> f64 {
++        if let Some(font) = &self.bitmap {
++            return font.advance(gid) as f64;
++        }
+         self.skrifa()
+             .and_then(|f| f.glyph_metrics(Size::unscaled(), self.location()).advance_width(GlyphId::new(gid)))
+             .map(|a| a as f64)
+@@ -353,6 +363,9 @@ impl FontFace {
+     }
+     /// Glyph id for `c` (0 = .notdef).
+     pub fn glyph_for(&self, c: char) -> u32 {
++        if let Some(font) = &self.bitmap {
++            return font.gid(c);
++        }
+         self.skrifa().and_then(|f| f.charmap().map(c)).map(|g| g.to_u32()).unwrap_or(0)
+     }
+ }
+@@ -594,6 +607,9 @@ fn font_file_ok(meta: &std::fs::Metadata) -> bool {
+ /// The platform's font folders (the system's and the user's), scanned by [`FontDb::global`].
+ /// Empty on wasm.
+ pub fn system_font_dirs() -> Vec<std::path::PathBuf> {
++    if crate::bitmap::configured() {
++        return Vec::new();
++    }
+     let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+     if cfg!(target_arch = "wasm32") {
+         return dirs;
+@@ -800,6 +816,9 @@ fn enumerate_faces(data: &[u8]) -> Vec<Found> {
+ 
+ /// The compiled-in last-resort face, for a database that somehow has no usable faces at all.
+ pub(crate) fn last_resort_face() -> Arc<FontFace> {
++    if let Ok(font) = crate::bitmap::from_env() {
++        return Arc::new(FontFace::from_bitmap(font.clone()));
++    }
+     static FACE: std::sync::OnceLock<Arc<FontFace>> = std::sync::OnceLock::new();
+     FACE.get_or_init(|| {
+         // The font is compiled in (`include_bytes!`), so parsing it can't depend on input; the
+@@ -834,6 +853,9 @@ fn make_face(bytes: FontBytes, index: u32, family: String, style: String, coords
+         FontBytes::Static(b) => b,
+         FontBytes::Owned(v) => v.as_slice(),
+     };
++    if crate::bitmap::configured() {
++        return None;
++    }
+     let f = skrifa::FontRef::from_index(data, index).ok()?;
+     let settings: Vec<(skrifa::Tag, f32)> = coords.iter().map(|(t, v)| (skrifa::Tag::new(t), *v)).collect();
+     let location = if coords.is_empty() { Location::default() } else { f.axes().location(settings.iter().copied()) };
+@@ -865,7 +887,8 @@ fn make_face(bytes: FontBytes, index: u32, family: String, style: String, coords
+         line_split: line_split(&f, m.ascent as f64, -(m.descent as f64), m.units_per_em.max(1) as f64),
+         underline: underline_metrics(m.underline, m.units_per_em.max(1) as f64),
+         strikeout: strikeout_metrics(m.strikeout, m.units_per_em.max(1) as f64),
+-        shaper,
++        shaper: Some(shaper),
++        bitmap: None,
+         coords,
+         location,
+         instance,
+@@ -941,13 +964,17 @@ impl FontDb {
+     /// without `CRAFT_FONTS_DIR`), whose system font scan reads `font_dirs`.
+     pub fn with_font_dirs(font_dirs: Vec<std::path::PathBuf>) -> Self {
+         let mut faces = Vec::new();
+-        for data in bundled() {
++        for data in bundled().into_iter().filter(|_| !crate::bitmap::configured()) {
+             for (i, family, style, coords) in enumerate_faces(data) {
+                 if let Some(f) = make_face(FontBytes::Static(data), i, family, style, coords) {
+                     faces.push(Arc::new(f));
+                 }
+             }
+         }
++        if let Ok(font) = crate::bitmap::from_env() {
++            faces.clear();
++            faces.push(Arc::new(FontFace::from_bitmap(font.clone())));
++        }
+         Self {
+             faces: RwLock::new(faces),
+             outlines: Mutex::new(OutlineCache::default()),
+@@ -997,6 +1024,9 @@ impl FontDb {
+ 
+     /// Family names available (loaded plus cataloged system fonts), sorted and deduplicated.
+     pub fn families(&self) -> Vec<String> {
++        if crate::bitmap::configured() {
++            return crate::bitmap::families();
++        }
+         let mut v: Vec<String> = self.read_faces().iter().map(|f| f.family.clone()).collect();
+         #[cfg(not(target_arch = "wasm32"))]
+         v.extend(self.read_catalog().iter().map(|c| c.family.clone()));
+@@ -1007,6 +1037,9 @@ impl FontDb {
+ 
+     /// Style names available for `family` (Regular first, then by weight).
+     pub fn styles(&self, family: &str) -> Vec<String> {
++        if crate::bitmap::configured() {
++            return crate::bitmap::styles(family);
++        }
+         let mut v: Vec<(bool, f32, String)> = self
+             .read_faces()
+             .iter()
+@@ -1170,6 +1203,19 @@ impl FontDb {
+     /// an open substitute ([`substitutes`]), then to Inter. Installed system fonts are found by name
+     /// whatever ran before.
+     pub fn face(&self, family: &str, style: &str) -> Arc<FontFace> {
++        if crate::bitmap::configured() {
++            if let Some(font) = crate::bitmap::named(family, style) {
++                if let Some(face) = self.read_faces().iter().find(|f| f.bitmap.as_ref().is_some_and(|b| Arc::ptr_eq(b, &font))).cloned() {
++                    return face;
++                }
++                let face = Arc::new(FontFace::from_bitmap(font));
++                self.faces.write().unwrap_or_else(std::sync::PoisonError::into_inner).push(face.clone());
++                return face;
++            }
++            if let Some(face) = self.read_faces().iter().find(|f| f.bitmap.is_some()).cloned() {
++                return face;
++            }
++        }
+         if let Some(f) = self.try_family(family, style) {
+             return f;
+         }
+@@ -1336,6 +1382,17 @@ impl FontDb {
+     /// First face (fallback family first, then load order) that covers `c`; on native, system
+     /// fonts are cataloged and loaded lazily the first time no loaded face covers a character.
+     pub fn fallback_for(&self, c: char, exclude: u32) -> Option<Arc<FontFace>> {
++        if crate::bitmap::configured() {
++            if let Some(face) = self.read_faces().iter().find(|f| f.id() != exclude && f.covers(c)).cloned() {
++                return Some(face);
++            }
++            if let Some(font) = crate::bitmap::fallback(c) {
++                let face = Arc::new(FontFace::from_bitmap(font));
++                self.faces.write().unwrap_or_else(std::sync::PoisonError::into_inner).push(face.clone());
++                return Some(face);
++            }
++            return None;
++        }
+         if let Some(f) = self.loaded_fallback(c, exclude) {
+             return Some(f);
+         }
+@@ -1350,6 +1407,9 @@ impl FontDb {
+     /// colour or very large faces). Rejected faces do not stop the search for another face.
+     /// A policy-specific miss is not stored as a general document-font miss.
+     pub fn fallback_for_filtered(&self, c: char, exclude: u32, accept: impl Fn(&FontFace) -> bool) -> Option<Arc<FontFace>> {
++        if crate::bitmap::configured() {
++            return self.fallback_for(c, exclude).filter(|f| accept(f));
++        }
+         if let Some(f) = self.loaded_fallback_filtered(c, exclude, &accept) {
+             return Some(f);
+         }
+@@ -1564,6 +1624,9 @@ impl FontDb {
+         if let Some(p) = self.outlines.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&key) {
+             return p;
+         }
++        if let Some(path) = face.bitmap_path(gid) {
++            return Arc::new(path);
++        }
+         let mut pen = FlipPen::new(MAX_OUTLINE_ELEMENTS);
+         if let Some(f) = face.skrifa()
+             && let Some(g) = f.outline_glyphs().get(GlyphId::new(gid))
+@@ -1659,7 +1722,7 @@ mod font_dir_tests {
+     fn faces_of_one_file_are_bounded_across_the_collection() {
+         // The per-collection and per-face limits together would allow far more.
+         assert!((MAX_COLLECTION_FACES as usize) * MAX_NAMED_INSTANCES_PER_FACE > 16 * MAX_ENUMERATED_FACES);
+-        for data in bundled() {
++        for data in bundled().into_iter().filter(|_| !crate::bitmap::configured()) {
+             assert!(enumerate_faces(data).len() <= MAX_ENUMERATED_FACES);
+         }
+     }
+@@ -1747,3 +1810,45 @@ mod font_dir_tests {
+         assert_eq!(u.len(), d.len());
+     }
+ }
++
++impl FontFace {
++    pub fn from_bitmap(font: Arc<crate::bitmap::BitmapFont>) -> Self {
++        Self {
++            id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
++            family: font.family.clone(),
++            style: font.style.clone(),
++            weight: font.weight,
++            italic: font.italic,
++            upem: font.pixels as f64,
++            ascent: font.ascent as f64,
++            descent: font.descent as f64,
++            cap_height: font.ascent as f64,
++            x_height: font.ascent as f64 * 0.5,
++            shaper: None,
++            coords: Vec::new(),
++            location: Location::default(),
++            instance: None,
++            bytes: FontBytes::Owned(font.data.clone()),
++            index: 0,
++            bmp: Default::default(),
++            legacy: None,
++            color: Default::default(),
++            line_split: font.ascent as f64 / (font.ascent + font.descent) as f64,
++            underline: (1., 1.),
++            strikeout: (font.ascent as f64 * 0.4, 1.),
++            bitmap: Some(font),
++        }
++    }
++    pub fn bitmap_path(&self, gid: u32) -> Option<BezPath> {
++        let font = self.bitmap.as_ref()?;
++        let mut path = BezPath::new();
++        for [x, y, w, h] in font.rectangles(gid) {
++            path.move_to((x, y));
++            path.line_to((x + w, y));
++            path.line_to((x + w, y + h));
++            path.line_to((x, y + h));
++            path.close_path();
++        }
++        Some(path)
++    }
++}
+diff --git a/crates/fonts/src/lib.rs b/crates/fonts/src/lib.rs
+index 0bb0edb..d7f0659 100644
+--- a/crates/fonts/src/lib.rs
++++ b/crates/fonts/src/lib.rs
+@@ -9,6 +9,12 @@
+ #![forbid(unsafe_code)]
+ 
+ mod fallback;
++pub mod bitmap {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/bitmap.rs"));
++}
++mod bitmap_harf {
++    include!(concat!(env!("DOME_OFFICE_COMMON"), "/harf.rs"));
++}
+ mod fontdb;
+ pub mod script;
+ mod shape;
+diff --git a/crates/fonts/src/shape.rs b/crates/fonts/src/shape.rs
+index 91ceef3..1a49e98 100644
+--- a/crates/fonts/src/shape.rs
++++ b/crates/fonts/src/shape.rs
+@@ -52,10 +52,24 @@ pub fn shape_range(face: &FontFace, para: &str, range: Range<usize>, params: &Sh
+     let (Some(_), Some(text), Some(_)) = (para.get(..range.start), para.get(range.clone()), para.get(range.end..)) else {
+         return Vec::new();
+     };
++    if let Some(font) = &face.bitmap {
++        return crate::bitmap_harf::shape(
++            font,
++            text,
++            params.features,
++            params.rtl,
++            para.get(..range.start).unwrap_or(""),
++            para.get(range.end..).unwrap_or(""),
++            &map,
++        )
++        .into_iter()
++        .map(|g| ShapedGlyph { gid: g.gid, cluster: range.start + g.cluster, x_advance: g.advance, x_offset: g.x, y_offset: g.y })
++        .collect();
++    }
+     let chunks = chunks(text, MAX_SHAPE_CHUNK);
+     let mut pieces: Vec<Vec<ShapedGlyph>> = Vec::with_capacity(chunks.len());
+-    let shaped = face.hb().map(|hb| {
+-        let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
++    let shaped = face.hb().zip(face.shaper.as_ref()).map(|(hb, data)| {
++        let shaper = data.shaper(&hb).instance(face.instance.as_ref()).build();
+         // Pieces of one item share the script the whole item would be guessed to have.
+         let item_script = (chunks.len() > 1 && params.script.is_none()).then(|| {
+             let mut probe = UnicodeBuffer::new();
+diff --git a/crates/mcp/src/headless.rs b/crates/mcp/src/headless.rs
+index bd1faf0..5a8e9cb 100644
+--- a/crates/mcp/src/headless.rs
++++ b/crates/mcp/src/headless.rs
+@@ -11,6 +11,7 @@ use crate::backend::Backend;
+ /// Headless backend: a [`Session`] rendering slides on the CPU.
+ pub struct Headless {
+     pub session: Session,
++    show: Option<deckcraft_engine::DomeShow>,
+     roots: Option<Arc<AutomationRoots>>,
+ }
+ 
+@@ -63,12 +64,12 @@ pub fn tool_kind(name: &str, preset: Option<&str>) -> Option<ToolKind> {
+ 
+ impl Headless {
+     pub fn new() -> Self {
+-        Self { session: Session::new(), roots: None }
++        Self { session: Session::new(), roots: None, show: None }
+     }
+ 
+     /// A session with a fresh presentation.
+     pub fn with_document() -> Self {
+-        Self { session: Session::with_new(), roots: None }
++        Self { session: Session::with_new(), roots: None, show: None }
+     }
+ 
+     /// Confine every file the session's commands read and write to `roots`
+@@ -153,6 +154,18 @@ impl Headless {
+             }
+             "engine.commands" => Ok(serde_json::to_value(self.session.commands()).unwrap_or_default()),
+             "document.inspect" => self.exec("document.inspect", &json!({})),
++            "domed.show" => {
++                let document = self.session.active().ok_or("No presentation")?;
++                let action = p.get("action").and_then(Value::as_str).unwrap_or("frame");
++                if action == "exit" {
++                    self.show = None;
++                    return Ok(json!({"exit":true}));
++                }
++                if action == "start" {
++                    self.show = Some(deckcraft_engine::DomeShow::new(&document.doc, document.selection.slide));
++                }
++                self.show.as_mut().ok_or("Start the show first")?.frame(&document.doc, action)
++            }
+             "ui.pointer" => self.pointer(p),
+             "ui.key" => {
+                 let key = s(p, "key").ok_or("missing `key`")?;
+diff --git a/crates/mcp/src/tools.rs b/crates/mcp/src/tools.rs
+index 2bf09b8..a4bef49 100644
+--- a/crates/mcp/src/tools.rs
++++ b/crates/mcp/src/tools.rs
+@@ -64,6 +64,8 @@ const APP_ONLY: &str = " Desktop app only (`deckcraft-cli mcp --connect PORT`)."
+ 
+ pub fn tool_definitions() -> Vec<Value> {
+     vec![
++        json!({"name":"domed_show","description":"Native DomeD slide animation player","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["start","frame","next","previous","exit"]}}}}),
++        json!({"name":"domed_bitmap_status","description":"DomeD bitmap provider identity and strike metrics","inputSchema":{"type":"object","properties":{},"additionalProperties":false},"annotations":{"readOnlyHint":true}}),
+         tool(
+             "list_commands",
+             "List commands",
+@@ -332,6 +334,16 @@ fn unknown_argument_error(name: &str, args: &Value) -> Option<String> {
+ }
+ 
+ pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
++    if name == "domed_show" {
++        return wrap(b.call("domed.show", a.clone()));
++    }
++
++    if name == "domed_bitmap_status" {
++        return match deckcraft_engine::bitmap_status() {
++            Ok(value) => ToolResult::json(&value),
++            Err(error) => ToolResult::error(error),
++        };
++    }
+     let a = if a.is_object() { a.clone() } else { json!({}) };
+     if let Some(msg) = unknown_argument_error(name, &a) {
+         return ToolResult::error(msg);
+diff --git a/crates/pdf/src/lib.rs b/crates/pdf/src/lib.rs
+index 79758aa..6b25e5c 100644
+--- a/crates/pdf/src/lib.rs
++++ b/crates/pdf/src/lib.rs
+@@ -591,6 +591,30 @@ impl Exporter<'_> {
+             if text.trim().is_empty() {
+                 continue;
+             }
++            if run.face.bitmap.is_some() {
++                if visible {
++                    let c = run.color;
++                    s.set_fill(Some(Fill {
++                        paint: krilla::color::rgb::Color::new(c.r, c.g, c.b).into(),
++                        opacity: NormalizedF32::new((f64::from(c.a) / 255. * run.alpha) as f32).unwrap_or(NormalizedF32::ONE),
++                        ..Default::default()
++                    }));
++                    s.push_transform(&tf(view * pt.transform));
++                    for &(gid, x, y) in &run.glyphs {
++                        if let Some(mut path) = run.face.bitmap_path(gid) {
++                            path.apply_affine(Affine::translate((x, y)) * Affine::scale(run.size / run.face.upem));
++                            if let Some(path) = to_path(&path) {
++                                s.draw_path(&path);
++                            }
++                        }
++                    }
++                    s.pop();
++                    s.set_fill(None);
++                }
++                // The slide backdrop already contains these bitmap glyphs. Never
++                // ask the SFNT subsetter to turn BDF bytes into an invisible font.
++                continue;
++            }
+             let font = self.font(&run.face)?;
+             let n = run.glyphs.len();
+             let ranges = glyph_text_ranges(&text, run.chars, &run.cells, n);
+@@ -653,9 +677,9 @@ impl Exporter<'_> {
+         out
+     }
+ 
+-    fn ui_font(&mut self) -> Result<(Font, std::sync::Arc<deckcraft_fonts::FontFace>)> {
++    fn ui_font(&mut self) -> Result<(Option<Font>, std::sync::Arc<deckcraft_fonts::FontFace>)> {
+         let face = FontDb::global().face(deckcraft_fonts::DEFAULT_FAMILY, "Regular");
+-        let f = self.font(&face)?;
++        let f = if face.bitmap.is_some() { None } else { Some(self.font(&face)?) };
+         Ok((f, face))
+     }
+ 
+@@ -675,7 +699,11 @@ impl Exporter<'_> {
+                     if y > area.y1 {
+                         break 'outer;
+                     }
+-                    s.draw_text(Point::from_xy(area.x0 as f32, y as f32), font.clone(), size as f32, &line, false, TextDirection::Auto);
++                    if let Some(font) = &font {
++                        s.draw_text(Point::from_xy(area.x0 as f32, y as f32), font.clone(), size as f32, &line, false, TextDirection::Auto);
++                    } else {
++                        draw_bitmap_text(s, &face, area.x0, y, size, &line);
++                    }
+                     y += lh;
+                     line = word.to_string();
+                 } else {
+@@ -686,7 +714,11 @@ impl Exporter<'_> {
+                 break;
+             }
+             if !line.is_empty() {
+-                s.draw_text(Point::from_xy(area.x0 as f32, y as f32), font.clone(), size as f32, &line, false, TextDirection::Auto);
++                if let Some(font) = &font {
++                    s.draw_text(Point::from_xy(area.x0 as f32, y as f32), font.clone(), size as f32, &line, false, TextDirection::Auto);
++                } else {
++                    draw_bitmap_text(s, &face, area.x0, y, size, &line);
++                }
+             }
+             y += lh;
+         }
+@@ -728,9 +760,13 @@ impl Exporter<'_> {
+         Ok(())
+     }
+     fn footer(&mut self, s: &mut Surface, pw: f64, ph: f64, n: usize) -> Result<()> {
+-        let (font, _) = self.ui_font()?;
++        let (font, face) = self.ui_font()?;
+         s.set_fill(Some(grey(0x60, 1.0)));
+-        s.draw_text(Point::from_xy((pw - 72.0) as f32, (ph - 30.0) as f32), font, 9.0, &n.to_string(), false, TextDirection::Auto);
++        if let Some(font) = font {
++            s.draw_text(Point::from_xy((pw - 72.0) as f32, (ph - 30.0) as f32), font, 9.0, &n.to_string(), false, TextDirection::Auto);
++        } else {
++            draw_bitmap_text(s, &face, pw - 72., ph - 30., 9., &n.to_string());
++        }
+         s.set_fill(None);
+         Ok(())
+     }
+@@ -767,3 +803,19 @@ fn to_path(bp: &kurbo::BezPath) -> Option<krilla::geom::Path> {
+ 
+ #[cfg(test)]
+ mod tests;
++
++// Paint the BDF set-bit rectangles in notes and handout furniture too.
++fn draw_bitmap_text(s: &mut Surface, face: &deckcraft_fonts::FontFace, x: f64, y: f64, size: f64, text: &str) {
++    let k = size / face.upem;
++    let mut pen = x;
++    for c in text.chars() {
++        let gid = face.glyph_for(c);
++        if let Some(mut path) = face.bitmap_path(gid) {
++            path.apply_affine(Affine::translate((pen, y)) * Affine::scale(k));
++            if let Some(path) = to_path(&path) {
++                s.draw_path(&path);
++            }
++        }
++        pen += face.advance(gid) * k;
++    }
++}

@@ -1,0 +1,14 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: MIT
+"""Launch @APP_NAME@ on DomeD's verified current working realm."""
+import os
+from pathlib import Path
+import shutil
+import sys
+
+binary = str(Path(__file__).resolve().with_name("@PROJECT_NAME_LOWER@-native"))
+command = [binary, *sys.argv[1:]]
+helper = shutil.which("dome-link")
+if helper:
+    os.execv(helper, [helper, "--app-id", "@APP_ID@", "--", *command])
+os.execv(binary, command)

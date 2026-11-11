@@ -1,0 +1,280 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "name": "wordcraft",
+      "title": "WordCraft",
+      "repository": "https://github.com/storytold/wordcraft.git",
+      "revision": "060768f1ed7f310e639bc49d7af7256e129f7409",
+      "cli": "wordcraft-cli",
+      "cargo_args": [],
+      "mcp_args": [
+        "mcp"
+      ],
+      "execute_tool": "execute",
+      "commands_tool": "list_commands",
+      "inspect_tool": "inspect_document",
+      "license": "MIT OR Apache-2.0",
+      "license_sha256": {
+        "LICENSE-MIT": "fc257de83c44ae49e4aad1cf777b886794be3ac9c8d00c010ef55935d5bbeba5",
+        "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "NOTICE": "8ff59a56c883fd708ed041c7a0ce4e16bb040e03027d94677d324ce711ebba2d"
+      },
+      "suite": "office",
+      "smoke_command": "text.insert",
+      "smoke_params": {
+        "text": "Native WordCraft on DomeD."
+      },
+      "default_extension": ".docx",
+      "capability_roots": true,
+      "command_key": "command",
+      "patches": [
+        {
+          "path": "patches/wordcraft-domed-bitmap.patch",
+          "sha256": "9059337ce5b94bcb535d38c7a22b9d6a007de6b7bed3b8b512523db49e0e4b78"
+        }
+      ],
+      "patched_files": {
+        "apps/wordcraft-cli/src/main.rs": "74f069f35e64b2222d8606339c420a89ce7033734dde69525cf9bffda6e7be06",
+        "crates/engine/src/cmd/file.rs": "7c9a91a04a999b16c1816d60d1c34746aa665e38f04c0cac1f086e83002e405e",
+        "crates/engine/src/lib.rs": "b29302e3534f9a76670e0bbfdc1caf78f50c366ee49195c8fcb71d83920e3409",
+        "crates/fonts/src/fontdb.rs": "b4492ba7ca8f2eabec90feba22bf2eec03f08c67a7dd0f5054108e9c40b62b90",
+        "crates/fonts/src/fontdb/catalog.rs": "54d3ea5a29a4921e5882268f0c019f41af977f6d2019225c5f5b00f31be9c709",
+        "crates/fonts/src/fontdb/face.rs": "58c5a2eafe3a07e029a89b863ac0e81ba5d5ce543b240b607e766af5e5afdfd2",
+        "crates/fonts/src/fontdb/fallback.rs": "db5223ba240f09be19fdf91c2d63dfb644c65e9d66d123e4a9f42224d947ba50",
+        "crates/fonts/src/fontdb/lookup.rs": "8faf0ba540685e3278fa377d017fe8e9a887175b37cf0b429cbf6f1203b45ac2",
+        "crates/fonts/src/fontdb/names.rs": "c053733edd749219272d3ef9ef0ce087116c89963905e102ffc978bf3824881a",
+        "crates/fonts/src/lib.rs": "cf8ddc58bc6b919b0bc00c67c28dab6d2c83e0863b111f192a432c8aab2a3cc1",
+        "crates/mcp/src/lib.rs": "8e192e51bbc5e20c77e03973d81d1d4c87403376122603d28aa26adb23471a07",
+        "crates/mcp/src/tools.rs": "34b6c4e016216b08edf41639980ed94521fd6a3583038cec8b9118d389397194",
+        "crates/pdf/src/exporter.rs": "4902121a6af11a15bb7a7893cf1d4312ea4d2534a2705978f4f1c3a970141220",
+        "crates/pdf/src/exporter/text.rs": "82b511520cef731e46b8b3dce1aa11a92d3b1d16cea0793fe7af2d9112387504"
+      },
+      "catalogue": "ports/catalogues/wordcraft.json",
+      "catalogue_sha256": "719ba4f8cf14f0aa0ed401a9a3d52131a7a699c80dca72480c226172516c4909",
+      "fork_repository": "https://github.com/jebot-git/wordcraft-xr.git",
+      "fork_branch": "domed"
+    },
+    {
+      "name": "gridcraft",
+      "title": "GridCraft",
+      "repository": "https://github.com/storytold/gridcraft.git",
+      "revision": "ff9f4b8acebc7332d6a59e352fa1b7686c910b31",
+      "cli": "gridcraft-cli",
+      "cargo_args": [],
+      "mcp_args": [
+        "mcp"
+      ],
+      "execute_tool": "execute_command",
+      "commands_tool": "list_commands",
+      "inspect_tool": "inspect_workbook",
+      "license": "MIT OR Apache-2.0",
+      "license_sha256": {
+        "LICENSE-MIT": "a87109bbb1ad43ca3920a5d7ff3806863b7e8470a73f4ded97a1447ac93333f5",
+        "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "NOTICE": "c23f6974c1a3da29fff3af7ae6658849f9432624286f8462d02e9fff98755d54"
+      },
+      "suite": "office",
+      "smoke_command": "cell.set",
+      "smoke_params": {
+        "cell": "A1",
+        "input": "=SUM(1,2,3)"
+      },
+      "default_extension": ".xlsx",
+      "capability_roots": false,
+      "command_key": "command",
+      "patches": [
+        {
+          "path": "patches/gridcraft-domed-bitmap.patch",
+          "sha256": "14e1e2c0168a9b06b4ad7d5299a23fae74c68d3cab5c3e011fdae54e646a13c2"
+        }
+      ],
+      "patched_files": {
+        "Cargo.lock": "ad279ee715286f9c1cb08e22ec1cdc371f1aae5f16318ed10dc95746b3f7977c",
+        "apps/gridcraft-cli/src/main.rs": "c5414fc1a712dc4c513146b4b12b201a2e19d2c4b8deee332f6e9d626c58e389",
+        "crates/engine/src/cmd/format/sizes.rs": "8f1a2edd3d0dd6dfc50c897c0ad05d0c246c61476886f84a67482e5712e97364",
+        "crates/engine/src/cmd/inspect.rs": "37006406e9c8bc1fe9c72dbbdd905688ee4905bd8c2d368d071c39cda6fd665a",
+        "crates/engine/src/cmd/print/text.rs": "6ae963930f4d75b3213ef11b348a3203a82b1f1eaf7f1a0e7900d5da1b4a7db8",
+        "crates/engine/src/lib.rs": "68fc2d411a4180dc9fae1107794583960ad4162ecd4bb0487cd64803b34cd4cc",
+        "crates/mcp/src/tools.rs": "bf3c7854f9fa115f740b2d36d727eeceeb0b4c6d3e03b9445c5355483e1ae1a3",
+        "crates/pdf/Cargo.toml": "b70537ade3e48bd72eb0a6a0dba9a9dd1151adfe516bf7b61db4853eb5c3bea5",
+        "crates/pdf/src/lib.rs": "8cb0cdacc6d85603dfdb9102f83f2120f94144769961836c223d4b530774da36"
+      },
+      "catalogue": "ports/catalogues/gridcraft.json",
+      "catalogue_sha256": "9aa62166112bccc3569af9c05cf1ab9b301fac85f5db0328c3553e6783d7b945",
+      "fork_repository": "https://github.com/jebot-git/gridcraft-xr.git",
+      "fork_branch": "domed"
+    },
+    {
+      "name": "deckcraft",
+      "title": "DeckCraft",
+      "repository": "https://github.com/storytold/deckcraft.git",
+      "revision": "e3e218a8fc9835c2c88c5f9cf48025d64d5caa1d",
+      "cli": "deckcraft-cli",
+      "cargo_args": [],
+      "mcp_args": [
+        "mcp"
+      ],
+      "execute_tool": "run_command",
+      "commands_tool": "list_commands",
+      "inspect_tool": "inspect_document",
+      "license": "MIT OR Apache-2.0",
+      "license_sha256": {
+        "LICENSE-MIT": "90e96fef569474cd526350e716e4b05dd32f179ca96d39d61e6b928485e35406",
+        "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "NOTICE": "2ce764ed5d83f2453a7dba485092c0c41b465fe795b31c2c59bc5279332bc4f3"
+      },
+      "suite": "office",
+      "smoke_command": "slide.new",
+      "smoke_params": {
+        "title": "DomeD slide"
+      },
+      "default_extension": ".pptx",
+      "capability_roots": true,
+      "command_key": "command",
+      "patches": [
+        {
+          "path": "patches/deckcraft-domed-bitmap.patch",
+          "sha256": "388ae76b359fa77ebcb583b2d9e1eb3652870cfebe231ce44311635eaa952850"
+        }
+      ],
+      "patched_files": {
+        "apps/deckcraft-cli/src/main.rs": "4adcd98510499da0bb61f563b72c2e095f8afb21afd68900fb5d8f221002720b",
+        "crates/engine/Cargo.toml": "393aef16cf31c5444cd429121852d2a6e47b41333948e923a9f2935d7a0578be",
+        "crates/engine/src/lib.rs": "57f26e51f8d8a8c9f90d36eb4d109607f54c0f5c4e049e22d7c714eb0bfc51f8",
+        "crates/fonts/src/fontdb.rs": "ba6652293b75e8b8c9d978aa8a2630c0d029953c81a59e74d841b23e6cd104b8",
+        "crates/fonts/src/lib.rs": "d0589316adc0650f3f54c61355d99cc72804ff41648b1c45c34d7e985d9c8c4e",
+        "crates/fonts/src/shape.rs": "ec16551f17f5934579393589b62b1a051477e535b9990c3ed49ec15df48bc9b8",
+        "crates/mcp/src/headless.rs": "09c5412cc46f23f0f5be410a7237996d64cbe1d30346af51145ee6194d7d7245",
+        "crates/mcp/src/tools.rs": "8e847af71596f6a721007b1db23e5e95da1342440ac2204cbba40c57ed664172",
+        "crates/pdf/src/lib.rs": "fb4566a76811fa9c3a194b3a1bea3a38c13cd57fd6118b99b34333af76152324"
+      },
+      "catalogue": "ports/catalogues/deckcraft.json",
+      "catalogue_sha256": "8ad0934860b819d07ed81e8889ca93af982d5cd9d3dc5e49cbf94bfba3fdff01",
+      "fork_repository": "https://github.com/jebot-git/deckcraft-xr.git",
+      "fork_branch": "domed"
+    },
+    {
+      "name": "photocraft",
+      "title": "PhotoCraft",
+      "repository": "https://github.com/storytold/photocraft.git",
+      "revision": "6d99175b18e8b82dd7e7399a330236ffbafb5e73",
+      "cli": "photocraft-cli",
+      "cargo_args": [
+        "--no-default-features"
+      ],
+      "mcp_args": [
+        "mcp"
+      ],
+      "execute_tool": "command_run",
+      "commands_tool": "command_list",
+      "inspect_tool": "doc_inspect",
+      "license": "MIT OR Apache-2.0",
+      "license_sha256": {
+        "LICENSE-MIT": "1a8f66d8a86b146f5336fa0d4b1186576c8aa98e60823080c85c7811cfd810af",
+        "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "NOTICE": "9225763160f7908a97bb4e67e38494e4932cf8bafec18fac6345506825d713ee"
+      },
+      "suite": "art",
+      "smoke_command": "layer.new.layer",
+      "smoke_params": {
+        "name": "DomeD layer"
+      },
+      "default_extension": ".pcraft",
+      "capability_roots": true,
+      "command_key": "id",
+      "patches": [
+        {
+          "path": "patches/photocraft-domed-native.patch",
+          "sha256": "7f15d7d681a5e8d1d159737be74b5346a399dd00b685ce4a01274291e0f7ab52",
+          "includes_upstream_fix": "https://github.com/storytold/photocraft/pull/13129"
+        }
+      ],
+      "patched_files": {
+        "crates/automation/src/headless.rs": "61cde77a268e137df97291eaf0a109685633068f933dc74284edcefdfca6e042",
+        "crates/automation/src/server.rs": "fe26fde28c601dd04e3a6a6c025607e6453234e475e9a35a9d01f2f1f40f5ab6",
+        "crates/codecs/src/codecs/tiff/decode.rs": "9cbd46fd00f62f59485d48a50b98a5803f6139fb116153e62d8b0bd658e8e67a"
+      },
+      "catalogue": "ports/catalogues/photocraft.json",
+      "catalogue_sha256": "f025ed6e39b71a30fb258659beb15b46b4e0f59d53d12b87da80471b073df275",
+      "font_policy": "DomeD BDF-only native UI; upstream image/type layer raster content.",
+      "fork_repository": "https://github.com/jebot-git/photocraft-xr.git",
+      "fork_branch": "domed"
+    }
+  ],
+  "future_projects": [
+    {
+      "name": "soundcraft",
+      "title": "SoundCraft",
+      "repository": "https://github.com/storytold/soundcraft.git",
+      "status": "future-not-fetched",
+      "suite": "audio"
+    },
+    {
+      "name": "designcraft",
+      "title": "DesignCraft",
+      "repository": "https://github.com/storytold/designcraft.git",
+      "status": "future-not-fetched",
+      "suite": "publishing"
+    },
+    {
+      "name": "lightcraft",
+      "title": "LightCraft",
+      "repository": "https://github.com/storytold/lightcraft.git",
+      "status": "future-not-fetched",
+      "suite": "photography"
+    }
+  ],
+  "excluded_projects": [
+    {
+      "name": "vectorcraft",
+      "title": "VectorCraft",
+      "repository": "https://github.com/storytold/vectorcraft.git",
+      "revision": "b37241f5ae821d77d61c7ff64ffa6d976cdaef14",
+      "cli": "vectorcraft-cli",
+      "cargo_args": [],
+      "mcp_args": [
+        "--safe-mode",
+        "mcp",
+        "--headless"
+      ],
+      "execute_tool": "run_command",
+      "commands_tool": "list_commands",
+      "inspect_tool": "inspect_document",
+      "license": "MIT OR Apache-2.0",
+      "license_sha256": {
+        "LICENSE-MIT": "8b6025dc4b707e0fb08b9c2054096f1be3ae61529399aa2c348dec676562dc71",
+        "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "NOTICE": "59502af9bc014f1374e01e696950cf7a9ce3e2ab8898873ffb3c1d828ffe5054"
+      },
+      "suite": "art",
+      "smoke_command": "shape.rectangle",
+      "smoke_params": {
+        "x": 24,
+        "y": 24,
+        "width": 120,
+        "height": 80
+      },
+      "default_extension": ".vectorcraft",
+      "capability_roots": true,
+      "command_key": "command"
+    }
+  ],
+  "font_policy": {
+    "provider": "domed-bdf-v1",
+    "native_views": "Installed DomeD BDF strikes only, GPU texture presentation",
+    "engine_rendering": "Direct BDF metrics and pixel masks; HarfRust callbacks; no outline fallback",
+    "font_catalog": "Installed BDF families and bitmap universal fallback",
+    "pdf": "Bitmap-derived glyph geometry; no substitute outline fonts",
+    "scope": [
+      "wordcraft",
+      "gridcraft",
+      "deckcraft"
+    ]
+  },
+  "common_sources": {
+    "bitmap/bitmap.rs": "e0f3f2fb72b396317891829b325dba505c523ef0dda296b75deb311977afcc08",
+    "bitmap/harf.rs": "b3f7ed8bc8280af2b21df0d338ca221e43652d5f9a25d7fee0a006c72b60667b",
+    "bitmap/show.rs": "479f2a36dd6cf0cadfec305431dfcbe51b1a6d2f0322ab971ac436a4faf6482e"
+  }
+}
