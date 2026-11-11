@@ -78,9 +78,23 @@ with tempfile.TemporaryDirectory(prefix="dome-craft-ports-") as temporary:
                     assert info["renderer"] and "llvmpipe" not in info["renderer"].lower()
                     service, menu = info["menu_service"], info["menu_path"]
 
-                    def rows():
+                    layout = bus.call_sync(service, menu, "com.canonical.dbusmenu", "GetLayout",
+                        GLib.Variant("(iias)", (0, -1, [])), None, Gio.DBusCallFlags.NONE, 2000, None).unpack()[1]
+                    for section, actions in [("File", ["Save"]), ("Edit", ["Undo", "Redo"])]:
+                        group = next(node for node in layout[2]
+                                     if node[1].get("label", "").replace("_", "") == section)
+                        labels = [node[1].get("label", "").replace("_", "") for node in group[2]]
+                        assert all(labels.count(action) == 1 for action in actions), (name, section, labels)
+                    checks.append("Save is in universal File; Undo and Redo are in universal Edit")
+
+                    def rows(section=None):
                         layout = bus.call_sync(service, menu, "com.canonical.dbusmenu", "GetLayout",
                             GLib.Variant("(iias)", (0, -1, [])), None, Gio.DBusCallFlags.NONE, 2000, None).unpack()[1]
+                        if section:
+                            layout = next(node for node in layout[2]
+                                          if node[1].get("label", "").replace("_", "") == section)
+                            return {node[1].get("label", "").replace("_", ""): (node[0], node[1])
+                                    for node in layout[2]}
                         found = {}
 
                         def visit(node):
@@ -91,14 +105,14 @@ with tempfile.TemporaryDirectory(prefix="dome-craft-ports-") as temporary:
                         visit(layout)
                         return found
 
-                    def click(label):
+                    def click(label, section=None):
                         deadline = time.monotonic() + 4
-                        while not rows()[label][1].get("enabled", True):
+                        while not rows(section)[label][1].get("enabled", True):
                             if time.monotonic() > deadline:
                                 raise AssertionError(f"{name}: {label} is disabled")
                             time.sleep(.05)
                         bus.call_sync(service, menu, "com.canonical.dbusmenu", "Event",
-                            GLib.Variant("(isvu)", (rows()[label][0], "clicked", GLib.Variant("i", 0), 0)),
+                            GLib.Variant("(isvu)", (rows(section)[label][0], "clicked", GLib.Variant("i", 0), 0)),
                             None, Gio.DBusCallFlags.NONE, 2000, None)
 
                     if name == "wordcraft":
@@ -126,14 +140,16 @@ with tempfile.TemporaryDirectory(prefix="dome-craft-ports-") as temporary:
                         click("Run selected")
                         wait(lambda s: not s.get("busy") and s.get("dirty") and s.get("snapshot", {}).get("document") != before, "upstream edit")
                         checks.append("Native menu dispatches actual upstream edit")
-                        click("Undo")
-                        wait(lambda s: not s.get("busy") and s.get("snapshot", {}).get("document") != info["snapshot"]["document"], "undo")
-                        click("Redo")
+                        edited = snapshot()["snapshot"]["document"]
+                        click("Undo", "Edit")
+                        wait(lambda s: not s.get("busy") and s.get("snapshot", {}).get("document") != edited, "undo")
+                        undone = snapshot()["snapshot"]["document"]
+                        click("Redo", "Edit")
                         # Snapshot changes can include history, so menu enabled state and the
                         # serialized file are checked as well as command success.
-                        wait(lambda s: not s.get("busy") and not s.get("error"), "redo")
+                        wait(lambda s: not s.get("busy") and not s.get("error") and s.get("snapshot", {}).get("document") != undone, "redo")
                         checks.append("Actual upstream undo/redo through universal menu")
-                        click("Save As...")
+                        click("Save", "File")
                         wait(lambda s: not s.get("busy") and not s.get("dirty"), "save")
                         assert save.exists() and save.stat().st_size > 0
                         if name in ["wordcraft", "gridcraft", "deckcraft"]:

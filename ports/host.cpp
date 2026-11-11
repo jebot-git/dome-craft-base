@@ -117,6 +117,15 @@ class Port {
     }
   }
   void show_document(bool refilter = true) {
+    const auto document = snapshot_.value("document", Json::object());
+    auto title = document.value("title", std::string());
+    if (title.empty() && document.value("path", Json()).is_string())
+      title = std::filesystem::path(document.at("path").get<std::string>()).filename().string();
+    if (title.empty())
+      title = options_.document.empty() ? "Untitled" : options_.document.filename().string();
+    title += dirty_ ? " * - " : " - ";
+    title += config_.at("title").get<std::string>();
+    app_.window().copy_label(title.c_str());
     std::string value = "Selected command: " + selected_ + "\n";
     for (const auto &command : snapshot_.value("commands", Json::array())) {
       if (command.value("id", "") != selected_)

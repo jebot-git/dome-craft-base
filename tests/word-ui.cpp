@@ -80,6 +80,11 @@ int main(int argc, char **argv) {
             "Word continuous page geometry is absent");
     require(!find(view, "File") && !find(view, "Help"),
             "Application menu duplicated in the ribbon");
+    require(!find(view, "Save") && !find(view, "Undo") && !find(view, "Redo"),
+            "Universal File/Edit actions duplicated above the ribbon");
+    auto *home = find(view, "Home");
+    require(home && home->parent()->y() == view.y(),
+            "Removed action strip still reserves space above the ribbon");
     require(!state.at("paragraph_editor") && !state.at("navigation"),
             "Prototype tools occupy the default editor");
     auto *bold = dynamic_cast<Fl_Button *>(find(view, "B"));

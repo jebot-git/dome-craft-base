@@ -85,6 +85,9 @@ page and are bounded to eight images and 64 MiB of decoded pixels. Navigation
 shows document headings and includes text search. The status bar shows page/word
 counts and the actual display zoom. The paragraph replacement tool and command
 workbench are optional View actions and do not occupy the default page workspace.
+DomeD's universal File menu owns Save, and Edit owns Undo and Redo; the office
+windows have no separate quick-action strip. Ribbon tabs begin at the top of
+the content area, and the document name and unsaved marker use the window title.
 DomeD owns window decorations and the menu; no macOS title-bar decorations are
 imitated. GridCraft and DeckCraft use the same menu/ribbon split. GridCraft has a compact
 formula bar, sheet tabs and a bounded viewport with BDF cell fonts, basic styles,

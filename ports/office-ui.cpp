@@ -9,16 +9,15 @@
 #include <FL/Fl_Scroll.H>
 #include <FL/fl_ask.H>
 #include <algorithm>
-#include <filesystem>
 #include <cmath>
 #include <map>
 #include <set>
 namespace dome_office {
 struct OfficeUi::Impl {
   View &view;
-  Fl_Group *quick, *status;
+  Fl_Group *status;
   Fl_Scroll *tabs, *tools;
-  Fl_Box *title, *count, *notice;
+  Fl_Box *count, *notice;
   Fl_Choice *fonts = nullptr, *styles = nullptr, *zoom;
   Fl_Input *size = nullptr;
   std::vector<std::string> families;
@@ -142,18 +141,11 @@ struct OfficeUi::Impl {
     return b;
   }
   Impl(View &v) : view(v) {
-    quick = new Fl_Group(v.x(), v.y(), v.w(), 30);
-    button(v.x() + 8, v.y() + 2, 58, 26, "Save", "file.save", nullptr, true);
-    button(v.x() + 70, v.y() + 2, 58, 26, "Undo", "edit.undo", nullptr, true);
-    button(v.x() + 132, v.y() + 2, 58, 26, "Redo", "edit.redo", nullptr, true);
-    title = new Fl_Box(v.x() + 204, v.y() + 2, v.w() - 212, 26, "Document");
-    title->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-    quick->end();
-    tabs = new Fl_Scroll(v.x(), v.y() + 30, v.w(), 32);
+    tabs = new Fl_Scroll(v.x(), v.y(), v.w(), 32);
     tabs->type(Fl_Scroll::HORIZONTAL);
     tabs->scrollbar_size(3);
     tabs->end();
-    tools = new Fl_Scroll(v.x(), v.y() + 62, v.w(), 94);
+    tools = new Fl_Scroll(v.x(), v.y() + 32, v.w(), 94);
     tools->type(Fl_Scroll::HORIZONTAL);
     tools->scrollbar_size(8);
     tools->end();
@@ -555,18 +547,15 @@ struct OfficeUi::Impl {
 };
 OfficeUi::OfficeUi(View &v) : impl_(std::make_unique<Impl>(v)) {}
 OfficeUi::~OfficeUi() = default;
-int OfficeUi::top() const { return 158; }
+int OfficeUi::top() const { return 128; }
 int OfficeUi::bottom() const { return 28; }
 void OfficeUi::message(const std::string &text) { impl_->notice->copy_label(text.c_str()); }
 void OfficeUi::layout() {
   auto &s = *impl_;
   auto &v = s.view;
-  int dx = v.x() - s.quick->x(), dy = v.y() - s.quick->y();
-  s.quick->resize(v.x(), v.y(), v.w(), 30);
-  s.title->resize(v.x() + 204, v.y() + 2, std::max(1, v.w() - 212), 26);
   // FLTK moves fixed children with their parent; the trailing controls are anchored explicitly.
-  s.tabs->resize(v.x(), v.y() + 30, v.w(), 32);
-  s.tools->resize(v.x(), v.y() + 62, v.w(), 94);
+  s.tabs->resize(v.x(), v.y(), v.w(), 32);
+  s.tools->resize(v.x(), v.y() + 32, v.w(), 94);
   s.status->resize(v.x(), v.y() + v.h() - 28, v.w(), 28);
   s.count->resize(v.x() + 8, v.y() + v.h() - 28, std::max(80, std::min(280, v.w() - 340)), 28);
   s.notice->resize(v.x() + 290, v.y() + v.h() - 28, std::max(1, v.w() - 630), 28);
@@ -577,8 +566,6 @@ void OfficeUi::layout() {
       b->widget->position(v.x() + v.w() - offsets[i++], v.y() + v.h() - 26);
     }
   s.zoom->resize(v.x() + v.w() - 160, v.y() + v.h() - 26, 112, 24);
-  (void)dx;
-  (void)dy;
 }
 void OfficeUi::update(const Json &snapshot, bool busy) {
   auto &s = *impl_;
@@ -599,16 +586,6 @@ void OfficeUi::update(const Json &snapshot, bool busy) {
   }
   auto doc = snapshot.value("document", Json::object());
   auto fmt = snapshot.value("view", Json::object()).value("format", Json::object());
-  std::string title = doc.value("title", std::string());
-  if (title.empty() && doc.value("path", Json()).is_string())
-    title = std::filesystem::path(doc.at("path").get<std::string>()).filename().string();
-  if (title.empty())
-    title = "Document";
-  title += (doc.value("dirty", false) ? " *" : "");
-  title += " - " + std::string(s.view.project_ == "gridcraft"   ? "GridCraft"
-                               : s.view.project_ == "deckcraft" ? "DeckCraft"
-                                                                : "WordCraft");
-  s.title->copy_label(title.c_str());
   int page =
       snapshot.value("view", Json::object()).value("raster", Json::object()).value("page", 0) + 1;
   auto value = "Page " + std::to_string(page) + " of " + std::to_string(doc.value("pages", 1)) +
@@ -669,7 +646,7 @@ dome_office::Json dome_office::OfficeUi::state() const {
 
 void dome_office::OfficeUi::visible(bool value) {
   for (auto *widget :
-       {static_cast<Fl_Widget *>(impl_->quick), static_cast<Fl_Widget *>(impl_->tabs),
+       {static_cast<Fl_Widget *>(impl_->tabs),
         static_cast<Fl_Widget *>(impl_->tools), static_cast<Fl_Widget *>(impl_->status)}) {
     if (value)
       widget->show();
