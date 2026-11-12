@@ -21,14 +21,33 @@ The native canvas consumes the engine's actual PNG composite. Pointer gestures
 invoke its paint, selection, layer translation, crop, gradient, shape/frame and
 type operations. The Layers panel has genuine isolated layer previews, selection,
 visibility, blend mode, opacity, locks, masks, grouping, creation and deletion.
-History and channel actions operate on the same document. Compound operations
-remain available in native parameter dialogs from the command catalog.
+History and channel actions operate on the same document. PhotoCraft does not use the generic command-form dispatcher. Image/Canvas Size,
+New Document, color picking, layer properties/blending, selection modifiers,
+fill/stroke, Gaussian Blur, channels and the main adjustments use dedicated
+native controls. Curves has an editable graph; text is entered on the canvas;
+Pen and Path use direct canvas gestures. Parameterized actions without a native
+controller remain disabled. Internal automation commands are not application
+menu items; the upstream command API remains available to automation.
 
 The tool-options strip changes with the tool: marquee shape, selection mode,
 feather and anti-aliasing; wand tolerance, contiguous and sample-all-layers;
 quick-selection size; brush size/mode/opacity/hardness; aligned Clone Stamp;
 and real Blur strength/Dodge exposure. Right-click a grouped tool or use its
 options dropdown to choose a subtool; Shift+the tool letter cycles subtools.
+Context menus and choice dropdowns are native child widgets drawn in the same
+GPU window, including modal-editor dropdowns and the color chooser. Right-click
+opens canvas, Layers, Channels, Paths and History actions. Hold a grouped tool
+for its flyout. Keyboard navigation, checked/disabled entries, scrolling and
+outside-click/Escape dismissal share the same menu implementation. Right-click
+on a layer selects it without toggling its eye; menu state is taken after that
+selection reaches the engine.
+
+Crop gestures show a rule-of-thirds preview and require Crop/Enter to commit;
+Cancel/Escape leaves the document intact. Type has an inline editor with size,
+alignment, Commit/Cancel and Ctrl+Enter/Escape. Pen clicks create a work path;
+Enter finishes it, clicking its starting point closes it, and Path drags translate
+it. Background/foreground swatches open a visual color chooser.
+
 The strip scrolls horizontally in compact windows and the workspace picker
 hides before it can overlap editing controls.
 
@@ -88,7 +107,11 @@ the authoritative dirty state and save destination.
 `dome-photo-tools-test LOCK ENGINE WORKSPACE` additionally drives native mouse,
 keyboard and tool-option callbacks against the real engine: selection geometry,
 intersection/modifier release, elliptical masks, outline movement, outside-image
-clicks, Escape, full-canvas edges, polygon lasso, wand and consecutive strokes.
+clicks, Escape, full-canvas edges, polygon lasso, wand and consecutive strokes. It also dispatches real window-level pointer events
+through flyouts, choice dropdowns (including modal ones), and canvas/layer
+context menus; verifies dedicated image-size controls, inline type commit,
+graphical Pen/Path, confirmed crop, all twelve adjustment controllers and
+alpha-channel creation/deletion.
 The engine unit regression verifies holes, bounded preview size and read-only
 inspection.
 
@@ -99,8 +122,9 @@ the native GPU window. The thumbnail regression verifies isolation and unchanged
 inspection/history, and rejects unknown layers and oversized requests.
 
 The main-window regions are implemented; this is not certification of complete
-Photoshop feature or bespoke-dialog parity. Advanced pen/path interactions and
-compound command parameters still use native forms. The upstream automation
+Photoshop feature or bespoke-dialog parity. Bezier-handle/direct-anchor manipulation, advanced layer effects and other
+parameterized actions still need dedicated editors. Those actions are disabled
+when no native controller exists; there is no command-form fallback. The upstream automation
 preview is bounded to 64 Mi source pixels and a 2048px output edge; layer previews
 have a stricter 256px edge. Physical XR/tablet interaction and production file
 compatibility have not been certified by these desktop checks.

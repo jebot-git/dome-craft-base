@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "command-form.hpp"
 #include "gpu-image.hpp"
+#include "photo-widgets.hpp"
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
@@ -9,7 +9,7 @@
 #include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Hold_Browser.H>
 #include <FL/Fl_Input.H>
-#include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Multiline_Input.H>
 #include <FL/Fl_Native_File_Chooser.H>
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Scroll.H>
@@ -127,10 +127,37 @@ class ToolButton : public Fl_Button {
 
 public:
   std::function<void()> variants;
+  bool holding_ = false, flyout_ = false;
+  static void held(void *p) {
+    auto &self = *static_cast<ToolButton *>(p);
+    if (self.holding_ && self.variants) {
+      self.flyout_ = true;
+      self.variants();
+    }
+  }
+  ~ToolButton() { Fl::remove_timeout(held, this); }
   int handle(int event) override {
-    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE && variants) {
-      variants();
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE) {
+      holding_ = true;
       return 1;
+    }
+    if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
+      holding_ = true;
+      flyout_ = false;
+      Fl::add_timeout(.35, held, this);
+    }
+    if (event == FL_RELEASE) {
+      Fl::remove_timeout(held, this);
+      holding_ = false;
+      if (Fl::event_button() == FL_RIGHT_MOUSE) {
+        if (variants)
+          variants();
+        return 1;
+      }
+      if (flyout_) {
+        value(1);
+        return 1;
+      }
     }
     return Fl_Button::handle(event);
   }
@@ -164,7 +191,18 @@ class PhotoLayers : public Fl_Hold_Browser {
   std::map<unsigned long, GpuImage> thumbnails_;
   std::map<unsigned long, bool> visible_;
   int handle(int event) override {
-    if (event == FL_PUSH && Fl::event_x() < x() + 26) {
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE) {
+      auto *item = find_item(Fl::event_y());
+      if (item)
+        value(lineno(item));
+      return 1;
+    }
+    if (event == FL_RELEASE && Fl::event_button() == FL_RIGHT_MOUSE) {
+      if (context)
+        context(value());
+      return 1;
+    }
+    if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE && Fl::event_x() < x() + 26) {
       auto *item = find_item(Fl::event_y());
       if (item && visibility) {
         auto id = static_cast<unsigned long>(reinterpret_cast<uintptr_t>(data(lineno(item))));
@@ -219,6 +257,7 @@ class PhotoLayers : public Fl_Hold_Browser {
 public:
   using Fl_Hold_Browser::Fl_Hold_Browser;
   std::function<void(unsigned long)> visibility;
+  std::function<void(int)> context;
   void visibility_state(unsigned long id, bool value) { visible_[id] = value; }
   void thumbnail(const Json &data) {
     auto id = data.at("layer").get<unsigned long>();
@@ -231,6 +270,43 @@ public:
     }
   }
   void reset_images() { thumbnails_.clear(); }
+};
+class ContextBrowser : public Fl_Hold_Browser {
+public:
+  std::function<void(int)> context;
+  using Fl_Hold_Browser::Fl_Hold_Browser;
+  int handle(int event) override {
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE) {
+      auto *item = find_item(Fl::event_y());
+      if (item)
+        value(lineno(item));
+      return 1;
+    }
+    if (event == FL_RELEASE && Fl::event_button() == FL_RIGHT_MOUSE) {
+      if (context)
+        context(value());
+      return 1;
+    }
+    return Fl_Hold_Browser::handle(event);
+  }
+};
+class InlineTypeInput : public Fl_Multiline_Input {
+public:
+  std::function<void(bool)> finish;
+  using Fl_Multiline_Input::Fl_Multiline_Input;
+  int handle(int event) override {
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Escape) {
+      if (finish)
+        finish(false);
+      return 1;
+    }
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Enter && Fl::event_state(FL_CTRL | FL_META)) {
+      if (finish)
+        finish(true);
+      return 1;
+    }
+    return Fl_Multiline_Input::handle(event);
+  }
 };
 class PhotoFrame : public Fl_Group {
   Photo &owner_;
@@ -253,6 +329,14 @@ class PhotoCanvas : public Fl_Widget {
   int gesture_variant_ = 0;
   bool selected(double px, double py) const;
   void finish_polygon();
+  void finish_path(bool closed);
+  Json crop_ = Json();
+  void apply_crop();
+  void cancel_crop() {
+    crop_ = Json();
+    points_ = Json::array();
+    redraw();
+  }
   Json clone_source_, clone_offset_;
   std::array<unsigned, 256> bins_{};
   void draw() override;
@@ -295,6 +379,7 @@ class Photo {
   Json config_, snapshot_ = Json::object();
   std::unique_ptr<artcraft::UpstreamSession> engine_;
   std::future<Json> job_;
+  std::function<void()> after_idle_;
   std::deque<std::pair<std::string, Json>> queued_;
   bool busy_ = true, dirty_ = false, panels_ = true, rulers_ = true;
   std::string error_, operation_, tool_ = "move", foreground_ = "#000000", background_ = "#ffffff";
@@ -302,6 +387,12 @@ class Photo {
   int options_font_size_ = 0;
   int dock_width_ = 288, color_height_ = 190, properties_height_ = 198;
   std::filesystem::path path_;
+  dome_photo::ContextMenu *context_;
+  Fl_Multiline_Input *type_editor_;
+  Fl_Value_Input *type_size_;
+  Fl_Choice *type_align_;
+  Fl_Button *type_commit_, *type_cancel_, *crop_commit_, *crop_cancel_;
+  double type_x_ = 0, type_y_ = 0;
   PhotoFrame *frame_;
   Fl_Scroll *options_bar_;
   Fl_Group *toolbox_, *dock_, *rail_, *color_panel_, *properties_panel_, *layers_panel_, *foot_;
@@ -363,7 +454,7 @@ class Photo {
     menu_commands_.push_back(
         {id, path, shortcut, false, std::move(action), [this, id, engine] {
            return artcraft::CommandState{
-               !busy_ && (!engine || enabled_[id]) &&
+               !busy_ && (!engine || (enabled_[id] && native_control(id))) &&
                    (id != "window.hide" || app_.platform_info().tray_available),
                false};
          }});
@@ -448,23 +539,16 @@ class Photo {
     }
     start(id, [this, id, params] { return engine_->execute(id, params); });
   }
-  void form(const std::string &id, Json params = nullptr) {
-    if (busy_)
-      return;
-    if (params.is_object()) {
-      execute(id, std::move(params));
-      return;
-    }
-    auto found = catalogue_.find(id);
-    if (found == catalogue_.end())
-      throw std::runtime_error("Unknown PhotoCraft command");
-    auto result = dome_office::command_form("org.domed.PhotoCraft", found->second);
-    if (result)
-      execute(id, *result);
-  }
-  bool discard() {
-    return !dirty_ ||
-           fl_choice("Discard unsaved image changes?", "Cancel", "Discard", nullptr) == 1;
+#include "photo-context.inc"
+#include "photo-controls.inc"
+  bool discard(bool all = false) {
+    bool dirty = dirty_;
+    if (all)
+      for (const auto &document : snapshot_.value("view", Json::object())
+                                      .value("session", Json::object())
+                                      .value("documents", Json::array()))
+        dirty = dirty || document.value("dirty", false);
+    return !dirty || fl_choice("Discard unsaved image changes?", "Cancel", "Discard", nullptr) == 1;
   }
   std::filesystem::path choose(bool save, const char *extension = ".pcraft") {
     Fl_Native_File_Chooser chooser;
@@ -489,14 +573,26 @@ class Photo {
     start("save", [this, path] { return engine_->save(path); });
   }
   void new_document() {
-    if (busy_ || !discard())
+    if (busy_)
       return;
-    auto result = dome_office::command_form(
-        "org.domed.PhotoCraft",
-        {{"label", "New image"},
-         {"params", "{\"width\": 1200, \"height\": 800, \"name\"?: string}"}});
-    if (result)
-      start("new", [this, p = *result] { return engine_->tool("doc_new", p); });
+    dome_photo::Dialog dialog("New Document", 520);
+    auto *name = dialog.text("Name", "Untitled");
+    auto *width = dialog.number("Width (pixels)", 1200, 1, 30000);
+    auto *height = dialog.number("Height (pixels)", 800, 1, 30000);
+    auto *background = dialog.choice("Background contents", {"White", "Black", "Transparent"});
+    auto *mode = dialog.choice("Color mode", {"RGB Color", "Grayscale", "CMYK Color", "Lab Color"});
+    auto *depth = dialog.choice("Bit depth", {"8 bit", "16 bit", "32 bit"});
+    if (dialog.run()) {
+      Json params = {
+          {"name", name->value()},
+          {"width", int(width->value())},
+          {"height", int(height->value())},
+          {"background",
+           std::array<const char *, 3>{"white", "black", "transparent"}[background->value()]},
+          {"mode", std::array<const char *, 4>{"rgb", "gray", "cmyk", "lab"}[mode->value()]},
+          {"depth", std::array<int, 3>{8, 16, 32}[depth->value()]}};
+      start("new", [this, params] { return engine_->tool("doc_new", params); });
+    }
   }
   std::vector<std::string> variants(const std::string &tool) const {
     if (tool == "marquee")
@@ -533,6 +629,11 @@ class Photo {
                                : tool_ == "blur" ? "Strength"
                                                  : "Opacity");
     show(aligned_, tool_ == "clone");
+    show(crop_commit_, tool_ == "crop");
+    show(crop_cancel_, tool_ == "crop");
+    for (Fl_Widget *widget :
+         std::vector<Fl_Widget *>{type_size_, type_align_, type_commit_, type_cancel_})
+      show(widget, tool_ == "type");
     auto choices = variants(tool_);
     tool_variant_->clear();
     for (auto &choice : choices)
@@ -556,6 +657,9 @@ class Photo {
     canvas_->points_ = Json::array();
     canvas_->panning_ = false;
     canvas_->moving_selection_ = false;
+    finish_type(tool_ == "type" && type_editor_->visible());
+    if (tool_ != tool)
+      canvas_->cancel_crop();
     tool_ = tool;
     for (auto &[name, b] : tools_) {
       b->value(name == tool);
@@ -588,15 +692,21 @@ class Photo {
       throw std::runtime_error("Use a #RRGGBB foreground colour");
     return value;
   }
-  void foreground_dialog() {
-    auto p =
-        dome_office::command_form("org.domed.PhotoCraft", {{"label", "Foreground colour (#RRGGBB)"},
-                                                           {"params", "{\"color\": string}"}});
-    if (p) {
-      color_->value(p->value("color", foreground_).c_str());
-      foreground_ = color();
+  void foreground_dialog(bool background = false) {
+    unsigned value = std::stoul((background ? background_ : foreground_).substr(1), nullptr, 16);
+    dome_photo::Dialog dialog(background ? "Background Color" : "Foreground Color", 420);
+    auto *picker = dialog.colour(double(value >> 16) / 255, double((value >> 8) & 255) / 255,
+                                 double(value & 255) / 255);
+    if (dialog.run()) {
+      char hex[8];
+      std::snprintf(hex, sizeof(hex), "#%02x%02x%02x", int(std::round(picker->r() * 255)),
+                    int(std::round(picker->g() * 255)), int(std::round(picker->b() * 255)));
+      if (background)
+        background_ = hex;
+      else
+        foreground_ = hex;
+      color_->value(foreground_.c_str());
       execute("tools.setColors", {{"foreground", foreground_}, {"background", background_}});
-      frame_->redraw();
     }
   }
   void zoom(double value) {
@@ -697,6 +807,7 @@ class Photo {
     for (auto row : doc.value("history", Json::array()))
       history_->add(row.get<std::string>().c_str());
     history_->value(history_->size());
+    std::string old_path = selected_path();
     channels_->clear();
     channel_names_.clear();
     auto channel = doc.value("channels", Json::object());
@@ -716,6 +827,18 @@ class Photo {
       channel_names_.push_back(name);
       channels_->add(name.c_str());
     }
+    auto target = channel.value("target", Json::object());
+    auto target_kind = target.value("kind", std::string("composite"));
+    int channel_row =
+        target_kind == "color" ? 2 + target.value("index", 0)
+        : target_kind == "alpha"
+            ? 2 + int(channel.value("colors", Json::array()).size()) + target.value("index", 0)
+            : 1;
+    channels_->value(channel_row);
+    if (target_kind == "alpha")
+      channels_panel_->child(2)->activate();
+    else
+      channels_panel_->child(2)->deactivate();
     paths_->clear();
     path_names_.clear();
     auto paths = snapshot_.value("view", Json::object()).value("paths", Json::object());
@@ -728,6 +851,18 @@ class Photo {
       paths_->add(name.c_str());
       path_names_.push_back(name);
     }
+    if (!path_names_.empty()) {
+      auto found = std::find(path_names_.begin(), path_names_.end(), old_path);
+      paths_->value(found == path_names_.end() ? 1 : int(found - path_names_.begin()) + 1);
+    }
+    if (doc.value("hasSelection", false))
+      paths_panel_->child(1)->activate();
+    else
+      paths_panel_->child(1)->deactivate();
+    if (!path_names_.empty() && enabled_["path.stroke"])
+      paths_panel_->child(2)->activate();
+    else
+      paths_panel_->child(2)->deactivate();
     std::ostringstream info;
     info << doc.value("width", 0) << " x " << doc.value("height", 0) << " px\n"
          << doc.value("mode", std::string("Rgb")) << " / " << doc.value("depth", 8) << " bit\n"
@@ -768,6 +903,11 @@ class Photo {
       auto command = std::move(queued_.front());
       queued_.pop_front();
       execute(std::move(command.first), std::move(command.second));
+    }
+    if (!busy_ && queued_.empty() && error_.empty() && after_idle_) {
+      auto action = std::move(after_idle_);
+      after_idle_ = {};
+      action();
     }
     if (!busy_ && queued_.empty() && error_.empty() && layers_panel_->visible_r() &&
         layers_->size() > 0) {
@@ -879,7 +1019,7 @@ public:
     brush_size_->range(.5, 5000);
     brush_size_->value(20);
     brush_size_->step(.5);
-    paint_mode_ = new Fl_Choice(258, 6, 132, 28, "Mode");
+    paint_mode_ = new dome_photo::NativeChoice(258, 6, 132, 28, "Mode");
     for (auto mode :
          {"normal", "multiply", "screen", "overlay", "darken", "lighten", "color", "luminosity"})
       paint_mode_->add(mode);
@@ -892,7 +1032,7 @@ public:
     hardness_->range(0, 100);
     hardness_->value(80);
     hardness_->step(1);
-    workspace_ = new Fl_Choice(1000, 6, 190, 28);
+    workspace_ = new dome_photo::NativeChoice(1000, 6, 190, 28);
     for (auto preset : {"Essentials", "Photography", "Painting", "Graphic and Web"})
       workspace_->add(preset);
     workspace_->value(0);
@@ -903,12 +1043,12 @@ public:
       top_tabs_->value(panel);
       frame_->redraw();
     });
-    tool_variant_ = new Fl_Choice(108, 4, 174, 26);
+    tool_variant_ = new dome_photo::NativeChoice(108, 4, 174, 26);
     bind(tool_variant_, [this] {
       tool_variants_[tool_] = tool_variant_->value();
       set_tool(tool_);
     });
-    selection_operation_ = new Fl_Choice(292, 4, 110, 26);
+    selection_operation_ = new dome_photo::NativeChoice(292, 4, 110, 26);
     for (auto mode : {"New", "Add", "Subtract", "Intersect"})
       selection_operation_->add(mode);
     selection_operation_->value(0);
@@ -929,6 +1069,17 @@ public:
     sample_all_ = new Fl_Check_Button(782, 4, 142, 26, "All layers");
     aligned_ = new Fl_Check_Button(686, 4, 112, 26, "Aligned");
     aligned_->value(1);
+    type_size_ = new Fl_Value_Input(110, 4, 70, 28, "Size");
+    type_size_->range(1, 1296);
+    type_size_->value(24);
+    type_align_ = new dome_photo::NativeChoice(240, 4, 130, 28, "Align");
+    for (auto label : {"Left", "Center", "Right"})
+      type_align_->add(label);
+    type_align_->value(0);
+    type_commit_ = button(390, 4, 100, 28, "Commit", [this] { finish_type(true); });
+    type_cancel_ = button(500, 4, 100, 28, "Cancel", [this] { finish_type(false); });
+    crop_commit_ = button(110, 4, 100, 28, "Crop", [this] { canvas_->apply_crop(); });
+    crop_cancel_ = button(230, 4, 100, 28, "Cancel", [this] { canvas_->cancel_crop(); });
     options_bar_->end();
     options_bar_->remove(workspace_);
     frame_->add(workspace_);
@@ -947,30 +1098,16 @@ public:
       b->copy_label(key.c_str());
       b->copy_tooltip(
           (name + " (" + key + "); right-click for subtools, Shift+letter cycles").c_str());
-      b->variants = [this, name] {
-        auto choices = variants(name);
-        if (choices.empty()) {
-          set_tool(name);
-          return;
-        }
-        Fl_Menu_Button menu(Fl::event_x(), Fl::event_y(), 1, 1);
-        for (auto &choice : choices)
-          menu.add(choice.c_str());
-        menu.textfont(tool_variant_->textfont());
-        menu.textsize(tool_variant_->textsize());
-        menu.labelfont(tool_variant_->labelfont());
-        if (auto *picked = menu.popup()) {
-          tool_variants_[name] = int(picked - menu.menu());
-          set_tool(name);
-        }
-      };
+      b->variants = [this, name, b] { tool_menu(name, b->x() + b->w(), b->y()); };
       b->type(FL_TOGGLE_BUTTON);
       tools_[name] = b;
       ++i;
     }
     auto *pair =
         new ColorPairButton(4, 390, 50, 28, [this] { return std::pair{foreground_, background_}; });
-    bind(pair, [this] { foreground_dialog(); });
+    bind(pair, [this, pair] {
+      foreground_dialog(Fl::event_x() >= pair->x() + 22 && Fl::event_y() >= pair->y() + 10);
+    });
     color_ = new Fl_Input(4, 424, 52, 26);
     color_->value("#000000");
     color_->textsize(10);
@@ -1042,7 +1179,7 @@ public:
     histogram_ = new PhotoNavigator(952, 76, 272, 146, *this, true);
     histogram_panel_->end();
     history_panel_ = new Fl_Group(944, 66, 288, 164, "History");
-    history_ = new Fl_Hold_Browser(952, 76, 272, 146);
+    history_ = new ContextBrowser(952, 76, 272, 146);
     history_->format_char(0);
     bind(history_, [this] {
       if (history_->value() > 0)
@@ -1054,8 +1191,8 @@ public:
     properties_panel_ = new Fl_Group(944, 260, 288, 172, "Properties");
     dimensions_ = new Fl_Box(956, 270, 252, 104, "Document properties");
     dimensions_->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
-    button(956, 382, 118, 28, "Image size...", [this] { form("image.imageSize"); });
-    button(1080, 382, 128, 28, "Canvas size...", [this] { form("image.canvasSize"); });
+    button(956, 382, 118, 28, "Image size...", [this] { control("image.imageSize"); });
+    button(1080, 382, 128, 28, "Canvas size...", [this] { control("image.canvasSize"); });
     properties_panel_->end();
     auto *adjustments = new Fl_Group(944, 260, 288, 172, "Adjustments");
     std::vector<std::pair<const char *, const char *>> adjustments_list = {
@@ -1075,7 +1212,7 @@ public:
     for (auto [label, id] : adjustments_list) {
       auto command = "layer.newAdjustmentLayer." + std::string(id);
       button(952 + (i % 2) * 136, 270 + (i / 2) * 24, 130, 22, label,
-             [this, command] { form(command); });
+             [this, command] { control(command); });
       ++i;
     }
     adjustments->end();
@@ -1086,7 +1223,7 @@ public:
     layer_filter_->tooltip("Filter layers by name");
     layer_filter_->when(FL_WHEN_CHANGED);
     bind(layer_filter_, [this] { refresh(); });
-    blend_ = new Fl_Choice(952, 500, 154, 26);
+    blend_ = new dome_photo::NativeChoice(952, 500, 154, 26);
     for (auto mode : {"Normal", "Dissolve", "Darken", "Multiply", "ColorBurn", "Lighten", "Screen",
                       "ColorDodge", "Overlay", "SoftLight", "HardLight", "Difference", "Hue",
                       "Saturation", "Color", "Luminosity"})
@@ -1123,33 +1260,34 @@ public:
       if (at >= 0 && at < int(layer_ids_.size()))
         execute("layer.select", {{"layer", layer_ids_[at]}});
     });
-    button(952, 730, 40, 26, "fx", [this] { form("layer.layerStyle.blendingOptions"); });
-    button(996, 730, 44, 26, "Mask", [this] { form("layer.layerMask.revealAll", Json::object()); });
+    button(952, 730, 40, 26, "fx", [this] { control("layer.layerStyle.blendingOptions"); });
+    button(996, 730, 44, 26, "Mask",
+           [this] { control("layer.layerMask.revealAll", Json::object()); });
     button(1044, 730, 44, 26, "Group", [this] { execute("layer.new.group"); });
     button(1092, 730, 44, 26, "New", [this] { execute("layer.new.layer"); });
     button(1140, 730, 74, 26, "Delete", [this] { execute("layer.delete"); });
     layers_panel_->end();
     channels_panel_ = new Fl_Group(944, 462, 288, 304, "Channels");
-    channels_ = new Fl_Hold_Browser(952, 468, 264, 256);
+    channels_ = new ContextBrowser(952, 468, 264, 256);
     channels_->format_char(0);
     bind(channels_, [this] {
       int at = channels_->value() - 1;
       if (at >= 0 && at < int(channel_names_.size()))
         execute("channel.target", {{"channel", channel_names_[at]}});
     });
-    button(952, 730, 112, 26, "New channel", [this] { form("channel.new"); });
-    button(1072, 730, 112, 26, "Delete", [this] { form("channel.delete"); });
+    button(952, 730, 112, 26, "New channel", [this] { control("channel.new"); });
+    button(1072, 730, 112, 26, "Delete", [this] { control("channel.delete"); });
     channels_panel_->end();
     paths_panel_ = new Fl_Group(944, 462, 288, 304, "Paths");
-    paths_ = new Fl_Hold_Browser(952, 468, 264, 256);
+    paths_ = new ContextBrowser(952, 468, 264, 256);
     paths_->format_char(0);
     button(952, 730, 112, 26, "Make path", [this] { execute("select.toWorkPath"); });
-    button(1072, 730, 112, 26, "Stroke...", [this] { form("path.stroke"); });
+    button(1072, 730, 112, 26, "Stroke...", [this] { control("path.stroke"); });
     paths_panel_->end();
     bottom_tabs_->end();
     dock_->end();
     foot_ = new Fl_Group(0, 800, options_.width, 28);
-    zoom_choice_ = new Fl_Choice(64, 802, 92, 24);
+    zoom_choice_ = new dome_photo::NativeChoice(64, 802, 92, 24);
     for (auto percent : {"Fit", "25%", "50%", "100%", "200%", "400%", "800%"})
       zoom_choice_->add(percent);
     zoom_choice_->value(0);
@@ -1166,6 +1304,18 @@ public:
     status_->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
     foot_->end();
     frame_->end();
+    type_editor_ = new InlineTypeInput(60, 80, 400, 120);
+    type_editor_->hide();
+    static_cast<InlineTypeInput *>(type_editor_)->finish = [this](bool accept) {
+      finish_type(accept);
+    };
+    context_ = new dome_photo::ContextMenu();
+    layers_->context = [this](int row) { layer_menu(row, Fl::event_x(), Fl::event_y()); };
+    for (auto pair : std::vector<std::pair<Fl_Hold_Browser *, std::string>>{
+             {history_, "history"}, {channels_, "channels"}, {paths_, "paths"}})
+      static_cast<ContextBrowser *>(pair.first)->context = [this, name = pair.second](int row) {
+        panel_menu(name, row, Fl::event_x(), Fl::event_y());
+      };
     app_.window().resizable(frame_);
     app_.window().end();
     app_.style();
@@ -1201,7 +1351,7 @@ void Photo::setup_menus() {
   menu(
       "app.quit", "&PhotoCraft/&Quit",
       [this] {
-        if (discard())
+        if (discard(true))
           app_.quit();
       },
       FL_CTRL + 'q');
@@ -1209,8 +1359,6 @@ void Photo::setup_menus() {
   menu(
       "file.open", "&File/&Open...",
       [this] {
-        if (!discard())
-          return;
         auto path = choose(false);
         if (!path.empty())
           start("open", [this, path] { return engine_->open(path); });
@@ -1240,7 +1388,7 @@ void Photo::setup_menus() {
   menu(
       "app.close", "&File/Close &window",
       [this] {
-        if (discard())
+        if (discard(true))
           app_.quit();
       },
       FL_CTRL + FL_SHIFT + 'w');
@@ -1258,16 +1406,17 @@ void Photo::setup_menus() {
       "layer.duplicate", "&Layer/&Duplicate layer", [this] { execute("layer.duplicate"); },
       FL_CTRL + 'j', true);
   menu("layer.delete", "&Layer/&Delete layer", [this] { execute("layer.delete"); }, 0, true);
-  menu("native.brushTest", "&Tools/Paint &foreground dab", [this] {
-    auto doc = snapshot_.value("document", Json::object());
-    execute(
-        "paint.stroke",
-        {{"points",
-          Json::array({Json::array({doc.value("width", 1) / 2, doc.value("height", 1) / 2, 1})})},
-         {"size", brush_size_->value()},
-         {"color", color()},
-         {"opacity", brush_opacity_->value() / 100}});
-  });
+  if (!options_.report.empty())
+    menu("native.brushTest", "&Tools/Paint &foreground dab", [this] {
+      auto doc = snapshot_.value("document", Json::object());
+      execute(
+          "paint.stroke",
+          {{"points",
+            Json::array({Json::array({doc.value("width", 1) / 2, doc.value("height", 1) / 2, 1})})},
+           {"size", brush_size_->value()},
+           {"color", color()},
+           {"opacity", brush_opacity_->value() / 100}});
+    });
   menu(
       "native.fit", "&View/Fit on &screen",
       [this] {
@@ -1337,9 +1486,8 @@ void Photo::setup_menus() {
                "the image to paint, "
                "select, move, crop or draw.\nSpace/Hand pans; Ctrl+wheel "
                "zooms.\nLayer, channel "
-               "and history panels edit the upstream document.\nAdvanced "
-               "command parameters use "
-               "native dialogs.");
+               "and history panels edit the upstream document.\nRight-click for contextual "
+               "actions; hold a grouped tool for its flyout.");
   });
   std::set<std::string> paths;
   for (const auto &[id, command] : catalogue_) {
@@ -1354,7 +1502,7 @@ void Photo::setup_menus() {
       path += part + "/";
     }
     if (path.empty())
-      path = "Tools/Commands/";
+      continue; // Internal automation commands are not application menu items.
     auto label = command.value("label", id);
     for (char &c : label)
       if (c == '/' || c == '&')
@@ -1364,7 +1512,7 @@ void Photo::setup_menus() {
     int n = 2;
     while (!paths.insert(path).second)
       path = original + " (" + std::to_string(n++) + ")";
-    menu(id, path, [this, id] { form(id); }, 0, true);
+    menu(id, path, [this, id] { control(id); }, 0, true);
   }
   const std::vector<std::string> order = {"PhotoCraft", "File",   "Edit",   "Image", "Layer",
                                           "Type",       "Select", "Filter", "3D",    "View",
@@ -1398,10 +1546,11 @@ void Photo::layout() {
   fl_font(tool_variant_->textfont(), tool_variant_->textsize());
   auto text_width = [](const char *text) { return int(std::ceil(fl_width(text ? text : ""))); };
   int offset = x + 6 - options_bar_->xposition();
-  for (Fl_Widget *control :
-       std::vector<Fl_Widget *>{tool_label_, tool_variant_, selection_operation_, brush_size_,
-                                paint_mode_, brush_opacity_, hardness_, feather_, tolerance_,
-                                antialias_, contiguous_, sample_all_, aligned_}) {
+  for (Fl_Widget *control : std::vector<Fl_Widget *>{
+           tool_label_, tool_variant_, selection_operation_, brush_size_, paint_mode_,
+           brush_opacity_, hardness_, feather_, tolerance_, antialias_, contiguous_, sample_all_,
+           aligned_, type_size_, type_align_, type_commit_, type_cancel_, crop_commit_,
+           crop_cancel_}) {
     if (!control->visible())
       continue;
     int width = std::max(60, text_width(control->label()) + 12), label = 0;
@@ -1546,6 +1695,12 @@ void PhotoFrame::resize(int x, int y, int w, int h) {
   owner_.layout();
 }
 int PhotoFrame::handle(int event) {
+  if (owner_.context_->visible() && event == FL_PUSH &&
+      !owner_.context_->contains(Fl::event_x(), Fl::event_y())) {
+    owner_.context_->close();
+    return 1;
+  }
+
   if (event == FL_PUSH && owner_.panels_) {
     int mx = Fl::event_x(), my = Fl::event_y();
     if (std::abs(mx - owner_.dock_->x() + 32) < 5) {
@@ -1613,6 +1768,31 @@ void PhotoCanvas::finish_polygon() {
 }
 int PhotoCanvas::ruler_size() const {
   return owner_.rulers_ ? std::max(22, owner_.app_.platform_info().font_pixels * 2) : 0;
+}
+void PhotoCanvas::apply_crop() {
+  if (!crop_.is_array())
+    return;
+  auto rectangle = crop_;
+  crop_ = Json();
+  owner_.zoom_ = 0;
+  reset_pan();
+  owner_.execute("image.crop", {{"x", rectangle[0]},
+                                {"y", rectangle[1]},
+                                {"width", rectangle[2]},
+                                {"height", rectangle[3]}});
+}
+void PhotoCanvas::finish_path(bool closed) {
+  if (points_.size() < 2)
+    return;
+  Json knots = Json::array();
+  for (auto point : points_)
+    knots.push_back(Json::array({point[0], point[1]}));
+  points_ = Json::array();
+  owner_.execute(
+      "path.set",
+      {{"name", "work"},
+       {"path", {{"subpaths", Json::array({Json{{"closed", closed}, {"knots", knots}}})}}}});
+  redraw();
 }
 void PhotoCanvas::geometry() {
   const int inset = ruler_size();
@@ -1723,6 +1903,19 @@ void PhotoCanvas::draw() {
       }
     fl_line_style(0);
   }
+  if (crop_.is_array()) {
+    int left = paper_.x + int(crop_[0].get<double>() * scale_),
+        top = paper_.y + int(crop_[1].get<double>() * scale_),
+        width = int(crop_[2].get<double>() * scale_), height = int(crop_[3].get<double>() * scale_);
+    fl_color(FL_WHITE);
+    fl_line_style(FL_SOLID, 1);
+    fl_rect(left, top, width, height);
+    for (int i = 1; i < 3; ++i) {
+      fl_line(left + i * width / 3, top, left + i * width / 3, top + height);
+      fl_line(left, top + i * height / 3, left + width, top + i * height / 3);
+    }
+    fl_line_style(0);
+  }
   if (points_.size() > 1 && !panning_ && !moving_selection_) {
     fl_color(FL_SELECTION_COLOR);
     auto first = points_.front(), last = points_.back();
@@ -1740,7 +1933,7 @@ void PhotoCanvas::draw() {
         fl_rect(std::min(sx, ex), std::min(sy, ey), std::abs(ex - sx), std::abs(ey - sy));
       fl_line_style(0);
     } else {
-      bool line_tool = owner_.tool_ == "lasso" || owner_.tool_ == "move" ||
+      bool line_tool = owner_.tool_ == "pen" || owner_.tool_ == "lasso" || owner_.tool_ == "move" ||
                        owner_.tool_ == "gradient" || moving_selection_;
       fl_line_style(FL_SOLID,
                     line_tool ? 1 : std::max(1, int(owner_.brush_size_->value() * scale_)));
@@ -1787,6 +1980,12 @@ int PhotoCanvas::handle(int event) {
   try {
     if (event == FL_FOCUS || event == FL_UNFOCUS)
       return 1;
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE)
+      return 1;
+    if (event == FL_RELEASE && Fl::event_button() == FL_RIGHT_MOUSE) {
+      owner_.canvas_menu(Fl::event_x(), Fl::event_y());
+      return 1;
+    }
     if (event == FL_RELEASE && points_.empty())
       return 1;
     if (event == FL_ENTER || event == FL_MOVE) {
@@ -1797,10 +1996,19 @@ int PhotoCanvas::handle(int event) {
       owner_.app_.window().cursor(FL_CURSOR_DEFAULT);
       return 1;
     }
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Enter && owner_.tool_ == "crop") {
+      apply_crop();
+      return 1;
+    }
     if (event == FL_KEYDOWN && Fl::event_key() == FL_Escape) {
+      cancel_crop();
       points_ = Json::array();
       panning_ = moving_selection_ = false;
       redraw();
+      return 1;
+    }
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Enter && owner_.tool_ == "pen") {
+      finish_path(false);
       return 1;
     }
     if (event == FL_KEYDOWN && Fl::event_key() == FL_Enter && owner_.tool_ == "lasso" &&
@@ -1858,6 +2066,11 @@ int PhotoCanvas::handle(int event) {
         owner_.layout();
         return 1;
       }
+      if ((key == FL_Delete || key == FL_BackSpace) && owner_.tool_ == "pen" && !points_.empty()) {
+        points_.erase(points_.end() - 1);
+        redraw();
+        return 1;
+      }
       if (key == FL_Delete || key == FL_BackSpace) {
         owner_.execute("edit.clear");
         return 1;
@@ -1884,6 +2097,21 @@ int PhotoCanvas::handle(int event) {
           owner_.tool_ == "hand" || Fl::event_button() == FL_MIDDLE_MOUSE || Fl::event_key(' ');
       if (!pan && !inside)
         return 1;
+      if (owner_.tool_ == "pen" && !pan) {
+        if (points_.size() >= 3 && std::hypot(px - points_.front()[0].get<double>(),
+                                              py - points_.front()[1].get<double>()) *
+                                           scale_ <
+                                       8) {
+          finish_path(true);
+          return 1;
+        }
+        if (points_.size() < 8192)
+          points_.push_back(Json::array({px, py, 1.}));
+        if (Fl::event_clicks() && points_.size() >= 2)
+          finish_path(false);
+        redraw();
+        return 1;
+      }
       if (owner_.tool_ == "lasso" && owner_.variant() == 1 && !pan) {
         if (points_.empty()) {
           gesture_mode_ = owner_.selection_mode();
@@ -1921,6 +2149,8 @@ int PhotoCanvas::handle(int event) {
       return 1;
     }
     if ((event == FL_DRAG || event == FL_RELEASE) && !points_.empty()) {
+      if (owner_.tool_ == "pen" && !panning_)
+        return 1;
       if (owner_.tool_ == "lasso" && owner_.variant() == 1 && !panning_)
         return 1;
       if (panning_) {
@@ -2023,24 +2253,17 @@ int PhotoCanvas::handle(int event) {
                           {"contiguous", bool(owner_.contiguous_->value())},
                           {"antiAlias", bool(owner_.antialias_->value())},
                           {"sampleAllLayers", bool(owner_.sample_all_->value())}});
-      } else if (tool == "crop" && rw >= 2 && rh >= 2)
-        owner_.execute("image.crop", {{"x", x0}, {"y", y0}, {"width", rw}, {"height", rh}});
-      else if (tool == "frame")
+      } else if (tool == "crop" && rw >= 2 && rh >= 2) {
+        crop_ = Json::array({x0, y0, rw, rh});
+        redraw();
+      } else if (tool == "frame")
         owner_.execute("layer.new.frame", {{"x", x0}, {"y", y0}, {"width", rw}, {"height", rh}});
       else if (tool == "shape")
         owner_.execute("shape.create", {{"kind", gesture_variant_ == 1 ? "ellipse" : "rect"},
                                         {"rect", Json::array({x0, y0, rw, rh})},
                                         {"fill", owner_.color()}});
       else if (tool == "type") {
-        auto p = dome_office::command_form(
-            "org.domed.PhotoCraft",
-            {{"label", "Type layer"}, {"params", "{\"text\": string, \"size\": 24}"}});
-        if (p) {
-          (*p)["x"] = px;
-          (*p)["y"] = py;
-          (*p)["color"] = owner_.color();
-          owner_.execute("type.create", *p);
-        }
+        owner_.begin_type(first[0], first[1]);
       } else if (tool == "eyedropper")
         owner_.start("eyedropper", [this, px, py] {
           auto result = owner_.engine_->execute("view.colorSamplers.add", {{"x", px}, {"y", py}});
@@ -2061,8 +2284,11 @@ int PhotoCanvas::handle(int event) {
                                                    "diamond"}[std::clamp(gesture_variant_, 0, 4)]},
              {"opacity", owner_.brush_opacity_->value()},
              {"mode", owner_.paint_mode_->text()}});
-      else if (tool == "pen" || tool == "path")
-        owner_.form(tool == "pen" ? "path.create" : "path.transform");
+      else if (tool == "path")
+        owner_.execute("path.transform",
+                       {{"name", owner_.selected_path()},
+                        {"translateX", last[0].get<double>() - first[0].get<double>()},
+                        {"translateY", last[1].get<double>() - first[1].get<double>()}});
       else {
         std::string command = tool == "healing"   ? "paint.spotHealing"
                               : tool == "clone"   ? "paint.cloneStamp"

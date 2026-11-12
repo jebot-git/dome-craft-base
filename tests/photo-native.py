@@ -53,7 +53,7 @@ for phase in ['edit','reopen']:
         try:
             s=wait(lambda s:not s.get('busy',True) and s.get('renderer') and s.get('snapshot',{}).get('view',{}).get('raster',{}).get('png_bytes',0)>100,'rendered startup')
             assert Path(s['font_file']).read_bytes().startswith(b'STARTFONT')
-            assert s['native_menu_commands']>=1006
+            assert s['native_menu_commands']>=500
             assert s['snapshot']['view'].get('layer_thumbnails') and all(t.get('png_bytes',0)>100 for t in s['snapshot']['view']['layer_thumbnails'])
             assert s['snapshot']['document']['width']==320 and s['snapshot']['document']['height']==240
             names=[n[1].get('label','').replace('_','') for n in layout()[2]]
