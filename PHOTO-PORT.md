@@ -46,7 +46,14 @@ Crop gestures show a rule-of-thirds preview and require Crop/Enter to commit;
 Cancel/Escape leaves the document intact. Type has an inline editor with size,
 alignment, Commit/Cancel and Ctrl+Enter/Escape. Pen clicks create a work path;
 Enter finishes it, clicking its starting point closes it, and Path drags translate
-it. Background/foreground swatches open a visual color chooser.
+it. Background/foreground swatches open a native GPU saturation/value picker
+with a hue strip, RGB inputs, a hex input and a live swatch. Eyedropper and
+Alt-click with Brush use the upstream read-only composite sampling command;
+sampling changes the foreground without adding image-history entries. Selecting
+a bright colour works from an initial black foreground. Painting on editable type,
+shape, fill or Smart Object layers asks for rasterization; cancelling leaves
+the layer intact. Queued gestures are checked after pending type edits finish.
+Rasterization and each stroke remain separate undo steps.
 
 The strip scrolls horizontally in compact windows and the workspace picker
 hides before it can overlap editing controls.
@@ -74,9 +81,11 @@ A bounded optional `layer` field on the headless `render_preview` tool supplies
 history. It clones the document's shared metadata, isolates the requested layer
 and uses the upstream compositor. The source and PNG budgets remain enforced.
 The UI caches at most 64 layer previews and requests the visible layer range.
-The histogram is computed from the displayed composite preview, not full source
-precision. Office text layout is bitmap-only; PhotoCraft uses bitmap-only native
-UI text while retaining the upstream image/type-layer renderer for document
+Dock overflow menus use the same in-window popup, including the Histogram tab.
+The luminosity histogram updates from the displayed composite preview, skips
+fully transparent pixels and supports grayscale/alpha previews. It represents
+the bounded preview rather than full source precision. Office text layout is
+bitmap-only; PhotoCraft uses bitmap-only native UI text while retaining the upstream image/type-layer renderer for document
 content. No font assets are bundled.
 
 ## Build and stage
@@ -116,6 +125,15 @@ graphical Pen/Path, confirmed crop, all twelve adjustment controllers and
 alpha-channel creation/deletion. GPU framebuffer readback additionally verifies
 visible black/white selection pixels on light and dark images at 50/100/300%
 zoom, plus actual pixel changes as the selection ants animate.
+
+`dome-photo-reliability-test LOCK ENGINE WORKSPACE` checks known white/red
+histograms and grayscale/alpha previews, opens the Histogram through its native
+dock overflow, interacts with the saturation/value, RGB and hex controls, and
+verifies type-to-brush rasterization, cancellation, undo and queued strokes.
+It dispatches window shortcuts after modal destruction; the former global-menu
+lifetime bug crashed that regression. Shortcuts now belong to each native
+window; modal menus never replace a process-global widget pointer.
+
 The engine unit regression verifies holes, bounded preview size and read-only
 inspection.
 

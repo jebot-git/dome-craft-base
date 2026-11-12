@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 #pragma once
-#include <artcraft/raster.hpp>
-#include <FL/Fl_PNG_Image.H>
 #include <FL/Fl_Gl_Window.H>
+#include <FL/Fl_PNG_Image.H>
 #include <FL/gl.h>
 #include <algorithm>
+#include <artcraft/raster.hpp>
 #include <memory>
 #include <string>
 namespace dome_office {
@@ -36,7 +36,7 @@ public:
 };
 // Transient textures follow the native window's current GL context, including XR recreation.
 class GpuImage {
-  std::unique_ptr<Fl_PNG_Image> image_;
+  std::unique_ptr<Fl_RGB_Image> image_;
   std::string encoded_;
 
 public:
@@ -48,11 +48,32 @@ public:
     auto image = std::make_unique<Fl_PNG_Image>(nullptr, bytes.data(), int(bytes.size()));
     if (image->fail())
       throw std::runtime_error("Cannot decode bitmap preview");
-    image_ = std::move(image);
+    // Normalize PNG greyscale/alpha as well as RGB. Drawing must not throw from
+    // a widget callback when an upstream preview uses one or two channels.
+    const int width = image->data_w(), height = image->data_h(), depth = image->d();
+    if (depth < 1 || depth > 4)
+      throw std::runtime_error("Invalid bitmap preview channels");
+    if (depth < 3) {
+      auto pixels = std::make_unique<unsigned char[]>(size_t(width) * height * 4);
+      const int stride = image->ld() ? image->ld() : width * depth;
+      for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x) {
+          const auto *src = image->array + size_t(y) * stride + x * depth;
+          auto *dst = pixels.get() + (size_t(y) * width + x) * 4;
+          dst[0] = dst[1] = dst[2] = src[0];
+          dst[3] = depth == 2 ? src[1] : 255;
+        }
+      auto normalized = std::make_unique<Fl_RGB_Image>(pixels.get(), width, height, 4);
+      normalized->alloc_array = 1;
+      pixels.release();
+      image_ = std::move(normalized);
+    } else {
+      image_ = std::move(image);
+    }
     encoded_ = encoded;
     return true;
   }
-  const Fl_PNG_Image *pixels() const { return image_.get(); }
+  const Fl_RGB_Image *pixels() const { return image_.get(); }
   void clear() {
     image_.reset();
     encoded_.clear();

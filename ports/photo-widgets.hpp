@@ -2,6 +2,7 @@
 #pragma once
 #include "gpu-image.hpp"
 #include <FL/Fl.H>
+#include <FL/Fl_Box.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Choice.H>
@@ -9,6 +10,7 @@
 #include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Scroll.H>
+#include <FL/Fl_Tabs.H>
 #include <FL/Fl_Value_Input.H>
 #include <FL/fl_draw.H>
 #include <algorithm>
@@ -222,6 +224,209 @@ public:
     return Fl_Widget::handle(event);
   }
 };
+// Photoshop-style saturation/value plane. Draw directly in the native GPU
+// surface instead of FLTK's software image callback used by Fl_Color_Chooser.
+class ColorPicker : public Fl_Group {
+  double hue_ = 0, saturation_ = 0, value_ = 0;
+  double red_ = 0, green_ = 0, blue_ = 0;
+  Fl_Value_Input *components_[3];
+  Fl_Input *hex_;
+  class Plane : public Fl_Widget {
+    ColorPicker &owner_;
+    bool hue_strip_;
+    void draw() override {
+      dome_office::GpuClip clip(*this, {x(), y(), w(), h()});
+      glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
+      glDisable(GL_TEXTURE_2D);
+      glDisable(GL_BLEND);
+      glBegin(GL_QUADS);
+      const int columns = hue_strip_ ? 1 : 64, rows = 128;
+      for (int row = 0; row < rows; ++row)
+        for (int col = 0; col < columns; ++col) {
+          double r, g, b;
+          Fl_Color_Chooser::hsv2rgb(hue_strip_ ? 6. * row / (rows - 1) : owner_.hue_,
+                                    hue_strip_ ? 1 : double(col) / (columns - 1),
+                                    hue_strip_ ? 1 : 1. - double(row) / (rows - 1), r, g, b);
+          glColor3d(r, g, b);
+          int left = x() + col * w() / columns, right = x() + (col + 1) * w() / columns;
+          int top = y() + row * h() / rows, bottom = y() + (row + 1) * h() / rows;
+          glVertex2i(left, top);
+          glVertex2i(right, top);
+          glVertex2i(right, bottom);
+          glVertex2i(left, bottom);
+        }
+      glEnd();
+      glPopAttrib();
+      int px = x() + int(owner_.saturation_ * (w() - 1)),
+          py = y() + int((1 - owner_.value_) * (h() - 1));
+      if (hue_strip_) {
+        py = y() + int(owner_.hue_ / 6 * (h() - 1));
+        fl_color(FL_BLACK);
+        fl_rect(x(), py - 2, w(), 5);
+        fl_color(FL_WHITE);
+        fl_rect(x() + 1, py - 1, w() - 2, 3);
+      } else {
+        fl_color(FL_BLACK);
+        fl_rect(px - 4, py - 4, 9, 9);
+        fl_color(FL_WHITE);
+        fl_rect(px - 3, py - 3, 7, 7);
+      }
+    }
+
+  public:
+    Plane(int X, int Y, int W, int H, ColorPicker &owner, bool hue)
+        : Fl_Widget(X, Y, W, H), owner_(owner), hue_strip_(hue) {
+      tooltip(hue ? "Hue; use Up/Down to adjust"
+                  : "Saturation and brightness; use arrow keys to adjust");
+    }
+    int handle(int event) override {
+      if (event == FL_FOCUS || event == FL_UNFOCUS)
+        return 1;
+      if (event == FL_PUSH || event == FL_DRAG) {
+        if (event == FL_PUSH && Fl::event_button() != FL_LEFT_MOUSE)
+          return 0;
+        take_focus();
+        if (hue_strip_)
+          owner_.hue_ =
+              5.999999 * std::clamp(double(Fl::event_y() - y()) / std::max(1, h() - 1), 0., 1.);
+        else {
+          owner_.saturation_ =
+              std::clamp(double(Fl::event_x() - x()) / std::max(1, w() - 1), 0., 1.);
+          owner_.value_ =
+              1 - std::clamp(double(Fl::event_y() - y()) / std::max(1, h() - 1), 0., 1.);
+        }
+        owner_.changed_hsv();
+        return 1;
+      }
+      if (event == FL_RELEASE)
+        return 1;
+      if (event == FL_KEYDOWN) {
+        int key = Fl::event_key();
+        if (key != FL_Left && key != FL_Right && key != FL_Up && key != FL_Down)
+          return 0;
+        if (hue_strip_)
+          owner_.hue_ =
+              std::clamp(owner_.hue_ + (key == FL_Up || key == FL_Left ? -.02 : .02), 0., 5.999999);
+        else {
+          if (key == FL_Left || key == FL_Right)
+            owner_.saturation_ =
+                std::clamp(owner_.saturation_ + (key == FL_Left ? -.01 : .01), 0., 1.);
+          else
+            owner_.value_ = std::clamp(owner_.value_ + (key == FL_Down ? -.01 : .01), 0., 1.);
+        }
+        owner_.changed_hsv();
+        return 1;
+      }
+      return Fl_Widget::handle(event);
+    }
+  };
+  Plane *square_, *strip_;
+  Fl_Box *swatch_;
+  void sync() {
+    components_[0]->value(std::round(red_ * 255));
+    components_[1]->value(std::round(green_ * 255));
+    components_[2]->value(std::round(blue_ * 255));
+    char hex[8];
+    std::snprintf(hex, sizeof(hex), "#%02x%02x%02x", int(std::round(red_ * 255)),
+                  int(std::round(green_ * 255)), int(std::round(blue_ * 255)));
+    hex_->value(hex);
+    swatch_->color(fl_rgb_color(uchar(std::round(red_ * 255)), uchar(std::round(green_ * 255)),
+                                uchar(std::round(blue_ * 255))));
+    redraw();
+  }
+  void changed_hsv() {
+    Fl_Color_Chooser::hsv2rgb(hue_, saturation_, value_, red_, green_, blue_);
+    sync();
+  }
+
+public:
+  ColorPicker(int X, int Y, int W, int H) : Fl_Group(X, Y, W, H) {
+    square_ = new Plane(X, Y, 340, H, *this, false);
+    strip_ = new Plane(X + 358, Y, 32, H, *this, true);
+    swatch_ = new Fl_Box(X + 472, Y, 204, 36);
+    swatch_->box(FL_FLAT_BOX);
+    const char *labels[] = {"R", "G", "B"};
+    for (int i = 0; i < 3; ++i) {
+      components_[i] = new Fl_Value_Input(X + 472, Y + 48 + i * 44, 204, 34, labels[i]);
+      components_[i]->range(0, 255);
+      components_[i]->step(1);
+      components_[i]->callback(
+          [](Fl_Widget *, void *data) {
+            auto &self = *static_cast<ColorPicker *>(data);
+            self.rgb(self.components_[0]->value() / 255, self.components_[1]->value() / 255,
+                     self.components_[2]->value() / 255);
+          },
+          this);
+    }
+    hex_ = new Fl_Input(X + 472, Y + 184, 204, 34, "Hex");
+    hex_->maximum_size(7);
+    hex_->when(FL_WHEN_CHANGED);
+    hex_->callback(
+        [](Fl_Widget *, void *data) {
+          auto &self = *static_cast<ColorPicker *>(data);
+          std::string value = self.hex_->value();
+          if (value.size() != 7 || value[0] != '#' ||
+              value.find_first_not_of("0123456789abcdefABCDEF", 1) != std::string::npos)
+            return;
+          unsigned rgb = unsigned(std::stoul(value.substr(1), nullptr, 16));
+          self.rgb((rgb >> 16) / 255., ((rgb >> 8) & 255) / 255., (rgb & 255) / 255.);
+        },
+        this);
+    end();
+    rgb(0, 0, 0);
+  }
+  void rgb(double r, double g, double b) {
+    red_ = std::clamp(r, 0., 1.);
+    green_ = std::clamp(g, 0., 1.);
+    blue_ = std::clamp(b, 0., 1.);
+    Fl_Color_Chooser::rgb2hsv(red_, green_, blue_, hue_, saturation_, value_);
+    sync();
+  }
+  double r() const { return red_; }
+  double g() const { return green_; }
+  double b() const { return blue_; }
+};
+// Overflow tabs use the same in-window popup as other PhotoCraft controls.
+class NativeTabs : public Fl_Tabs {
+  bool pressed_ = false;
+  void popup() {
+    std::vector<MenuEntry> entries;
+    for (int i = 0; i < children(); ++i) {
+      std::string label = child(i)->label() ? child(i)->label() : "Untitled";
+      entries.push_back({label,
+                         [this, i, label] {
+                           // Document cards can be rebuilt while an engine operation finishes.
+                           if (i < children() && child(i)->label() && label == child(i)->label()) {
+                             value(child(i));
+                             redraw();
+                             do_callback();
+                           }
+                         },
+                         true, child(i) == value()});
+    }
+    ContextMenu::get(window())->open(x(), y() + std::abs(tab_height()), std::move(entries),
+                                     labelfont(), labelsize());
+  }
+
+public:
+  using Fl_Tabs::Fl_Tabs;
+  int handle(int event) override {
+    const int header = std::abs(tab_height());
+    bool in_header = Fl::event_y() >= y() && Fl::event_y() < y() + header;
+    if (event == FL_PUSH && in_header &&
+        (Fl::event_button() == FL_RIGHT_MOUSE || Fl::event_x() >= x() + w() - 30)) {
+      pressed_ = true;
+      Fl_Widget::take_focus();
+      return 1;
+    }
+    if (event == FL_RELEASE && pressed_) {
+      pressed_ = false;
+      popup();
+      return 1;
+    }
+    return Fl_Tabs::handle(event);
+  }
+};
 class DialogBody : public Fl_Group {
 public:
   using Fl_Group::Fl_Group;
@@ -369,27 +574,9 @@ public:
     next_ += 48;
     return input;
   }
-  Fl_Color_Chooser *colour(double r, double g, double b) {
-    auto *input = new Fl_Color_Chooser(30, app_.content_top() + next_, 700, 260);
+  ColorPicker *colour(double r, double g, double b) {
+    auto *input = new ColorPicker(30, app_.content_top() + next_, 700, 260);
     input->rgb(r, g, b);
-    for (int i = 0; i < input->children(); ++i)
-      if (auto *old = dynamic_cast<Fl_Choice *>(input->child(i))) {
-        old->hide();
-        auto *parent = Fl_Group::current();
-        input->begin();
-        auto *mode = new NativeChoice(old->x(), old->y(), old->w(), old->h());
-        mode->copy(old->menu());
-        mode->value(old->value());
-        mode->callback(
-            [](Fl_Widget *widget, void *data) {
-              static_cast<Fl_Color_Chooser *>(data)->mode(
-                  static_cast<Fl_Choice *>(widget)->value());
-            },
-            input);
-        input->end();
-        Fl_Group::current(parent);
-        break;
-      }
     next_ += 280;
     return input;
   }
@@ -398,10 +585,16 @@ public:
     next_ += height;
     return at;
   }
-  bool run() {
+  void notice(const char *message) {
+    auto *label = new Fl_Box(30, app_.content_top() + next_, 710, 100);
+    label->copy_label(message);
+    label->align(FL_ALIGN_INSIDE | FL_ALIGN_LEFT | FL_ALIGN_WRAP);
+    next_ += 112;
+  }
+  bool run(const char *accept_label = "Apply") {
     int height = std::max(app_.window().h(), app_.content_top() + next_ + 64);
     app_.window().size(780, height);
-    auto *ok = new Fl_Button(590, height - 48, 150, 34, "Apply");
+    auto *ok = new Fl_Button(590, height - 48, 150, 34, accept_label);
     ok->callback([](Fl_Widget *, void *p) { static_cast<Dialog *>(p)->app_.invoke("accept"); },
                  this);
     auto *cancel = new Fl_Button(420, height - 48, 150, 34, "Cancel");

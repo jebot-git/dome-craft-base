@@ -383,6 +383,7 @@ class Photo {
   std::future<Json> job_;
   std::function<void()> after_idle_;
   std::deque<std::pair<std::string, Json>> queued_;
+  bool paint_prompt_ = false;
   bool busy_ = true, dirty_ = false, panels_ = true, rulers_ = true;
   std::string error_, operation_, tool_ = "move", foreground_ = "#000000", background_ = "#ffffff";
   double zoom_ = 0;
@@ -539,7 +540,50 @@ class Photo {
       queued_.push_back({std::move(id), std::move(params)});
       return;
     }
-    start(id, [this, id, params] { return engine_->execute(id, params); });
+    // Validate against the latest snapshot when a queued stroke is drained.
+    // In particular type.create may still be running when the brush gesture begins.
+    if (id.starts_with("paint.") && params.contains("points") &&
+        params.value("target", std::string("pixels")) == "pixels") {
+      const auto doc = snapshot_.value("document", Json::object());
+      const auto target = doc.value("channels", Json::object()).value("target", Json::object());
+      if (!doc.value("quickMask", false) &&
+          target.value("kind", std::string("composite")) != "alpha") {
+        auto active = doc.value("activeLayer", 0ul);
+        for (const auto &layer : doc.value("layers", Json::array())) {
+          if (layer.value("id", 0ul) != active)
+            continue;
+          auto kind = layer.value("kind", std::string("Pixel"));
+          if (kind == "Type" || kind == "Shape" || kind == "Fill" || kind == "Smart Object") {
+            paint_prompt_ = true;
+            dome_photo::Dialog dialog("Rasterize Layer", 280);
+            dialog.notice("Painting requires pixels. Rasterizing converts this layer's editable "
+                          "text, vectors or smart content into pixels. You can undo this change.");
+            bool accepted = dialog.run("Rasterize");
+            paint_prompt_ = false;
+            if (accepted) {
+              queued_.push_front({std::move(id), std::move(params)});
+              start("layer.rasterize.layer", [this, active] {
+                return engine_->execute("layer.rasterize.layer", {{"layer", active}});
+              });
+            } else {
+              // Discard brush gestures collected before the user cancelled.
+              std::erase_if(
+                  queued_, [](const auto &command) { return command.first.starts_with("paint."); });
+            }
+            return;
+          }
+        }
+      }
+    }
+    start(id, [this, id, params] {
+      if (id == "native.sampleColor") {
+        auto rgba = engine_->execute("document.sampleColor", params);
+        Json rgb = Json::array({rgba.at(0), rgba.at(1), rgba.at(2)});
+        engine_->execute("tools.setColors", {{"foreground", rgb}});
+        return rgba;
+      }
+      return engine_->execute(id, params);
+    });
   }
 #include "photo-context.inc"
 #include "photo-controls.inc"
@@ -901,18 +945,18 @@ class Photo {
         status();
       }
     }
-    if (!busy_ && !queued_.empty() && error_.empty()) {
+    if (!paint_prompt_ && !busy_ && !queued_.empty() && error_.empty()) {
       auto command = std::move(queued_.front());
       queued_.pop_front();
       execute(std::move(command.first), std::move(command.second));
     }
-    if (!busy_ && queued_.empty() && error_.empty() && after_idle_) {
+    if (!paint_prompt_ && !busy_ && queued_.empty() && error_.empty() && after_idle_) {
       auto action = std::move(after_idle_);
       after_idle_ = {};
       action();
     }
-    if (!busy_ && queued_.empty() && error_.empty() && layers_panel_->visible_r() &&
-        layers_->size() > 0) {
+    if (!paint_prompt_ && !busy_ && queued_.empty() && error_.empty() &&
+        layers_panel_->visible_r() && layers_->size() > 0) {
       int first = std::max(0, layers_->topline() - 1);
       std::string key;
       for (int i = first; i < std::min(int(layer_ids_.size()), first + 12); ++i)
@@ -1137,7 +1181,7 @@ public:
     });
     button(4, 488, 50, 24, "Mask", [this] { execute("select.editInQuickMaskMode"); });
     toolbox_->end();
-    documents_ = new Fl_Tabs(60, 40, 850, 32);
+    documents_ = new dome_photo::NativeTabs(60, 40, 850, 32);
     documents_->end();
     bind(documents_, [this] {
       if (busy_ || !documents_->value())
@@ -1153,7 +1197,7 @@ public:
     button(912, 144, 28, 28, "P", [this] { middle_tabs_->value(properties_panel_); });
     rail_->end();
     dock_ = new Fl_Group(944, 40, 288, 700);
-    top_tabs_ = new Fl_Tabs(944, 40, 288, 190);
+    top_tabs_ = new dome_photo::NativeTabs(944, 40, 288, 190);
     color_panel_ = new Fl_Group(944, 66, 288, 164, "Color");
     auto *palette = new Fl_Box(954, 80, 268, 46, "Foreground / background");
     palette->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
@@ -1196,7 +1240,7 @@ public:
     });
     history_panel_->end();
     top_tabs_->end();
-    middle_tabs_ = new Fl_Tabs(944, 234, 288, 198);
+    middle_tabs_ = new dome_photo::NativeTabs(944, 234, 288, 198);
     properties_panel_ = new Fl_Group(944, 260, 288, 172, "Properties");
     dimensions_ = new Fl_Box(956, 270, 252, 104, "Document properties");
     dimensions_->align(FL_ALIGN_LEFT | FL_ALIGN_TOP | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
@@ -1226,7 +1270,7 @@ public:
     }
     adjustments->end();
     middle_tabs_->end();
-    bottom_tabs_ = new Fl_Tabs(944, 436, 288, 330);
+    bottom_tabs_ = new dome_photo::NativeTabs(944, 436, 288, 330);
     layers_panel_ = new Fl_Group(944, 462, 288, 304, "Layers");
     layer_filter_ = new Fl_Input(952, 468, 264, 26);
     layer_filter_->tooltip("Filter layers by name");
@@ -1836,11 +1880,16 @@ void PhotoCanvas::refresh(const Json &state) {
   if (!png.empty() && image_.set(png)) {
     bins_.fill(0);
     auto *image = image_.pixels();
-    if (image && image->d() >= 3)
-      for (size_t i = 0, n = size_t(image->data_w()) * image->data_h(); i < n; ++i) {
-        auto *pixel = image->array + i * image->d();
-        ++bins_[(54u * pixel[0] + 183u * pixel[1] + 19u * pixel[2]) >> 8];
-      }
+    if (image && image->d() >= 3) {
+      const int stride = image->ld() ? image->ld() : image->data_w() * image->d();
+      for (int y = 0; y < image->data_h(); ++y)
+        for (int x = 0; x < image->data_w(); ++x) {
+          const auto *pixel = image->array + size_t(y) * stride + x * image->d();
+          if (image->d() == 4 && pixel[3] == 0)
+            continue;
+          ++bins_[(54u * pixel[0] + 183u * pixel[1] + 19u * pixel[2]) >> 8];
+        }
+    }
   }
   geometry();
   redraw();
@@ -2159,6 +2208,12 @@ int PhotoCanvas::handle(int event) {
         redraw();
         return 1;
       }
+      if (!pan && owner_.tool_ == "brush" && Fl::event_state(FL_ALT)) {
+        points_ = Json::array();
+        owner_.execute("native.sampleColor",
+                       {{"x", px}, {"y", py}, {"size", 1}, {"sampleLayer", "all"}});
+        return 1;
+      }
       gesture_tool_ = owner_.tool_;
       gesture_mode_ = owner_.selection_mode();
       gesture_variant_ = owner_.variant();
@@ -2299,15 +2354,8 @@ int PhotoCanvas::handle(int event) {
       else if (tool == "type") {
         owner_.begin_type(first[0], first[1]);
       } else if (tool == "eyedropper")
-        owner_.start("eyedropper", [this, px, py] {
-          auto result = owner_.engine_->execute("view.colorSamplers.add", {{"x", px}, {"y", py}});
-          owner_.engine_->execute("view.colorSamplers.delete", {{"index", result.at("index")}});
-          auto rgb = result.at("rgb");
-          for (auto &component : rgb)
-            component = component.get<double>() / 255.;
-          owner_.engine_->execute("tools.setColors", {{"foreground", rgb}});
-          return result;
-        });
+        owner_.execute("native.sampleColor",
+                       {{"x", px}, {"y", py}, {"size", 1}, {"sampleLayer", "all"}});
       else if (tool == "gradient")
         owner_.execute(
             "paint.gradient",
@@ -2375,6 +2423,7 @@ int PhotoCanvas::handle(int event) {
   }
 }
 void PhotoNavigator::draw() {
+  dome_office::GpuClip clip(*this, {x(), y(), w(), h()});
   fl_push_clip(x(), y(), w(), h());
   fl_color(FL_BACKGROUND2_COLOR);
   fl_rectf(x(), y(), w(), h());
@@ -2398,14 +2447,15 @@ void PhotoNavigator::draw() {
   } else if (histogram_) {
     fl_font(labelfont(), labelsize());
     fl_color(FL_FOREGROUND_COLOR);
-    fl_draw("Composite preview histogram", x() + 8, y() + 18);
+    fl_draw("Luminosity", x() + 8, y() + 24);
     const auto &bins = owner_.canvas_->histogram();
     unsigned maximum = 1;
     for (auto b : bins)
       maximum = std::max(maximum, b);
     for (int i = 0; i < 256; ++i) {
       int height = int(double(bins[i]) / maximum * std::max(1, h() - 34));
-      fl_rectf(x() + i * w() / 256, y() + h() - height - 6, std::max(1, w() / 256), height);
+      fl_rectf(x() + i * w() / 256, y() + h() - height - 6,
+               std::max(1, (i + 1) * w() / 256 - i * w() / 256), height);
     }
   }
   fl_pop_clip();

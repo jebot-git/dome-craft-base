@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
-#include <artcraft/application.hpp>
 #include "desktop-menu.h"
 #include "gpu-window.h"
 #include "status-item.hpp"
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/fl_ask.H>
-#include <gio/gio.h>
-#include <chrono>
 #include <algorithm>
+#include <artcraft/application.hpp>
 #include <cctype>
+#include <chrono>
 #include <cmath>
-#include <map>
-#include <deque>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 #include <filesystem>
 #include <fstream>
+#include <gio/gio.h>
+#include <map>
 #include <stdexcept>
 #include <thread>
 #include <utility>
@@ -26,6 +26,15 @@ class NativeWindow : public dx::GpuWindow {
 public:
   using dx::GpuWindow::GpuWindow;
   std::string capture_path;
+  Fl_Menu_Bar *shortcut_menu = nullptr; // Owned by this window, never registered globally.
+  int handle(int event) override {
+    int handled = dx::GpuWindow::handle(event);
+    if (handled)
+      return handled;
+    if (event == FL_SHORTCUT && shortcut_menu && (!Fl::modal() || Fl::modal() == this))
+      return shortcut_menu->handle(event);
+    return 0;
+  }
   void draw() override {
     dx::GpuWindow::draw();
     if (capture_path.empty())
@@ -109,10 +118,10 @@ struct Application::Impl {
     window = std::make_unique<NativeWindow>(options.width, options.height, options.title.c_str());
     window->xclass(options.id.c_str());
     menu = new Fl_Menu_Bar(0, 0, options.width, 30);
+    window->shortcut_menu = menu;
     window->end();
     if (dx::dome()) {
       menu->hide();
-      menu->global();
       top = 0;
     }
     window->size_range(320, 240);
