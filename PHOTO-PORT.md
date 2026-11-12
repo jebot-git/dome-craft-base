@@ -64,7 +64,9 @@ are queued separately so each remains an independent engine edit.
 coverage, bounded to 256 rows/columns. Native black/white outlines follow that
 mask, including curves, disjoint pieces and holes, instead of a bounding box.
 Large-image feedback is sampled; this does not change the full-resolution
-engine mask or document pixels. The small mask is also used for outline-hit
+engine mask or document pixels. Selection borders use explicit one-pixel
+black/white bands with a shared animated phase. They do not depend on GPU line
+stipple, which the native toolkit's axis-aligned rectangle fast path ignores. The small mask is also used for outline-hit
 feedback. Frame creates a genuine frame layer, rather than a filled rectangle.
 
 A bounded optional `layer` field on the headless `render_preview` tool supplies
@@ -111,7 +113,9 @@ clicks, Escape, full-canvas edges, polygon lasso, wand and consecutive strokes. 
 through flyouts, choice dropdowns (including modal ones), and canvas/layer
 context menus; verifies dedicated image-size controls, inline type commit,
 graphical Pen/Path, confirmed crop, all twelve adjustment controllers and
-alpha-channel creation/deletion.
+alpha-channel creation/deletion. GPU framebuffer readback additionally verifies
+visible black/white selection pixels on light and dark images at 50/100/300%
+zoom, plus actual pixel changes as the selection ants animate.
 The engine unit regression verifies holes, bounded preview size and read-only
 inspection.
 

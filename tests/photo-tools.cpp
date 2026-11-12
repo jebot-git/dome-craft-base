@@ -115,6 +115,59 @@ struct PhotoHarness {
     check(apply, "Native dialog Apply button missing");
     apply->do_callback();
   }
+  struct Frame {
+    int width = 0, height = 0;
+    std::vector<unsigned char> pixels;
+    bool dark(int x, int y) const {
+      auto p = (size_t(y) * width + x) * 3;
+      return pixels[p] < 48 && pixels[p + 1] < 48 && pixels[p + 2] < 48;
+    }
+    bool light(int x, int y) const {
+      auto p = (size_t(y) * width + x) * 3;
+      return pixels[p] > 208 && pixels[p + 1] > 208 && pixels[p + 2] > 208;
+    }
+  };
+  static Frame capture(Photo &photo, const std::filesystem::path &path) {
+    std::filesystem::remove(path);
+    photo.app_.request_capture(path.string());
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
+    while (!std::filesystem::exists(path) && std::chrono::steady_clock::now() < deadline)
+      Fl::wait(.02);
+    check(std::filesystem::exists(path), "GPU selection capture timed out");
+    std::ifstream in(path, std::ios::binary);
+    std::string magic;
+    int maximum;
+    Frame frame;
+    in >> magic >> frame.width >> frame.height >> maximum;
+    in.get();
+    check(magic == "P6" && maximum == 255, "Invalid selection framebuffer capture");
+    frame.pixels.resize(size_t(frame.width) * frame.height * 3);
+    in.read(reinterpret_cast<char *>(frame.pixels.data()), frame.pixels.size());
+    check(bool(in), "Truncated selection framebuffer capture");
+    return frame;
+  }
+  static void visible_outline(Photo &photo, const Options &options, const std::string &name) {
+    auto frame = capture(photo, options.workspace / (name + ".ppm"));
+    auto paper = photo.canvas_->paper();
+    double zoom = photo.canvas_->scale(), pixel = double(frame.width) / photo.app_.window().w();
+    int left = int((paper.x + 12 * zoom) * pixel), right = int((paper.x + 48 * zoom) * pixel),
+        top = int((paper.y + 10 * zoom) * pixel);
+    int best_dark = 0, best_light = 0;
+    for (int dy = -2; dy <= 2; ++dy) {
+      int dark = 0, light = 0;
+      for (int x = left; x < right; ++x) {
+        dark += frame.dark(x, top + dy);
+        light += frame.light(x, top + dy);
+      }
+      if (std::min(dark, light) > std::min(best_dark, best_light)) {
+        best_dark = dark;
+        best_light = light;
+      }
+    }
+    int minimum = std::max(1, (right - left) / 8);
+    check(best_dark >= minimum && best_light >= minimum,
+          "Selection outline has no visible alternating black/white pixels");
+  }
   static void run(const Json &config, const Options &options) {
     Photo photo(config, options);
     photo.app_.show();
@@ -132,6 +185,26 @@ struct PhotoHarness {
     drag(photo, 10, 10, 50, 40);
     check(photo.snapshot_["document"]["selectionBounds"] == Json::array({10, 10, 40, 30}),
           "Marquee drag has incorrect document bounds");
+    for (double zoom : {.5, 1., 3.}) {
+      photo.zoom(zoom);
+      visible_outline(photo, options, "selection-white-" + std::to_string(int(zoom * 100)));
+    }
+    photo.zoom(3);
+    auto animated_before = capture(photo, options.workspace / "selection-animation-before.ppm");
+    int phase = photo.canvas_->selection_phase_;
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (photo.canvas_->selection_phase_ == phase && std::chrono::steady_clock::now() < deadline)
+      Fl::wait(.02);
+    auto animated_after = capture(photo, options.workspace / "selection-animation-after.ppm");
+    auto animation_paper = photo.canvas_->paper();
+    double pixels = double(animated_after.width) / photo.app_.window().w();
+    int changes = 0;
+    for (int x = int((animation_paper.x + 12 * 3) * pixels);
+         x < int((animation_paper.x + 48 * 3) * pixels); ++x)
+      for (int y = int((animation_paper.y + 10 * 3) * pixels) - 2;
+           y <= int((animation_paper.y + 10 * 3) * pixels) + 2; ++y)
+        changes += animated_before.dark(x, y) != animated_after.dark(x, y);
+    check(changes > 8, "Selection ants do not animate in the GPU framebuffer");
     drag(photo, 30, 20, 60, 50, FL_SHIFT | FL_ALT);
     check(photo.snapshot_["document"]["selectionBounds"] == Json::array({30, 20, 20, 20}),
           "Shift+Alt must intersect and survive modifier release");
@@ -177,6 +250,24 @@ struct PhotoHarness {
           "Marquee cannot reach last image row/column");
     photo.execute("select.deselect");
     wait(photo);
+    photo.start("new", [&] {
+      return photo.engine_->tool("doc_new",
+                                 {{"width", 96}, {"height", 96}, {"background", "black"}});
+    });
+    wait(photo);
+    photo.zoom(3);
+    photo.set_tool("marquee");
+    drag(photo, 10, 10, 50, 40);
+    for (double zoom : {.5, 1., 3.}) {
+      photo.zoom(zoom);
+      visible_outline(photo, options, "selection-black-" + std::to_string(int(zoom * 100)));
+    }
+    photo.start("new", [&] {
+      return photo.engine_->tool("doc_new",
+                                 {{"width", 96}, {"height", 96}, {"background", "white"}});
+    });
+    wait(photo);
+    photo.zoom(3);
     photo.set_tool("lasso");
     photo.tool_variant_->value(1);
     photo.tool_variant_->do_callback();

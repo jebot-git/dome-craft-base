@@ -337,6 +337,8 @@ class PhotoCanvas : public Fl_Widget {
     points_ = Json::array();
     redraw();
   }
+  int selection_phase_ = 0;
+  std::chrono::steady_clock::time_point next_selection_frame_{};
   Json clone_source_, clone_offset_;
   std::array<unsigned, 256> bins_{};
   void draw() override;
@@ -920,6 +922,13 @@ class Photo {
         thumbnail_row_ = first;
         start("layer-preview", [] { return Json::object(); });
       }
+    }
+    auto now = std::chrono::steady_clock::now();
+    if (snapshot_.value("document", Json::object()).value("hasSelection", false) &&
+        now >= canvas_->next_selection_frame_) {
+      canvas_->selection_phase_ = (canvas_->selection_phase_ + 1) & 7;
+      canvas_->next_selection_frame_ = now + std::chrono::milliseconds(100);
+      canvas_->redraw();
     }
     if (!options_.report.empty()) {
       auto info = app_.platform_info();
@@ -1875,12 +1884,37 @@ void PhotoCanvas::draw() {
     auto edge = [&](int x1, int y1, int x2, int y2) {
       int left = paper_.x + int(x1 * scale_), top = paper_.y + int(y1 * scale_),
           right = paper_.x + int(x2 * scale_), bottom = paper_.y + int(y2 * scale_);
-      fl_color(FL_BLACK);
-      fl_line_style(FL_SOLID, 1);
-      fl_line(left, top, right, bottom);
-      fl_color(FL_WHITE);
-      fl_line_style(FL_DASH, 1);
-      fl_line(left, top, right, bottom);
+      // Keep the outer image boundary on its final visible pixel.
+      if (left == paper_.x + paper_.w)
+        --left;
+      if (right == paper_.x + paper_.w)
+        --right;
+      if (top == paper_.y + paper_.h)
+        --top;
+      if (bottom == paper_.y + paper_.h)
+        --bottom;
+      bool horizontal = top == bottom;
+      int fixed = horizontal ? top : left;
+      if (fixed < (horizontal ? clip.y : clip.x) ||
+          fixed >= (horizontal ? clip.y + clip.h : clip.x + clip.w))
+        return;
+      int begin = std::max(horizontal ? std::min(left, right) : std::min(top, bottom),
+                           horizontal ? clip.x : clip.y);
+      int end = std::min(horizontal ? std::max(left, right) : std::max(top, bottom),
+                         horizontal ? clip.x + clip.w - 1 : clip.y + clip.h - 1);
+      // Axis-aligned FLTK GPU lines use filled rectangles, so GL line stipple
+      // cannot produce dashes. Explicit pixel bands retain contrast and a
+      // continuous phase even when the contour arrives in one-cell segments.
+      for (int at = begin; at <= end;) {
+        int phase = (at + fixed + selection_phase_) & 7;
+        int length = std::min(end - at + 1, 4 - (phase & 3));
+        fl_color(phase < 4 ? FL_BLACK : FL_WHITE);
+        if (horizontal)
+          fl_rectf(at, fixed, length, 1);
+        else
+          fl_rectf(fixed, at, 1, length);
+        at += length;
+      }
     };
     int width = preview.at("width"), height = preview.at("height");
     dome_office::GpuClip selection_clip(*this, clip);
