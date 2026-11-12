@@ -41,10 +41,14 @@ for phase in ['edit','reopen']:
         def layout():
             s=state();return bus.call_sync(s['menu_service'],s['menu_path'],'com.canonical.dbusmenu','GetLayout',GLib.Variant('(iias)',(0,-1,[])),None,Gio.DBusCallFlags.NONE,3000,None).unpack()[1]
         def click(*path):
-            node=layout()
-            for part in path:
-                node=next(child for child in node[2] if child[1].get('label','').replace('_','')==part)
-            assert node[1].get('enabled',True),path
+            deadline=time.monotonic()+5
+            while True:
+                node=layout()
+                for part in path:
+                    node=next(child for child in node[2] if child[1].get('label','').replace('_','')==part)
+                if node[1].get('enabled',True):break
+                if time.monotonic()>=deadline:raise AssertionError(('Menu stayed disabled',path,state().get('error')))
+                time.sleep(.05)
             s=state();bus.call_sync(s['menu_service'],s['menu_path'],'com.canonical.dbusmenu','Event',GLib.Variant('(isvu)',(node[0],'clicked',GLib.Variant('i',0),0)),None,Gio.DBusCallFlags.NONE,3000,None)
         try:
             s=wait(lambda s:not s.get('busy',True) and s.get('renderer') and s.get('snapshot',{}).get('view',{}).get('raster',{}).get('png_bytes',0)>100,'rendered startup')

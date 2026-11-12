@@ -111,3 +111,65 @@ index e7956ad..ee08026 100644
  /// Steps [`jpeg_sof`] may take per strip or tile beyond the file's length: room to read again
  /// the few header segments of strips or tiles that share one stream (a sparse file pointing its
  /// blank tiles at one tile).
+diff --git a/crates/engine/src/inspect.rs b/crates/engine/src/inspect.rs
+index 722e8b5..3b4fcbd 100644
+--- a/crates/engine/src/inspect.rs
++++ b/crates/engine/src/inspect.rs
+@@ -52,6 +52,7 @@ fn document_with(d: &DocState, detail: bool) -> Value {
+         "selectedLayers": selected.iter().map(|l| l.0).collect::<Vec<_>>(),
+         "isolatedLayers": d.isolated_layers.iter().map(|l| l.0).collect::<Vec<_>>(),
+         "hasSelection": doc.selection.is_some(),
++        "selectionPreview": selection_preview(d),
+         "selectionBounds": doc.selection.as_ref().map(|s| { let r = s.content_bounds(); [r.x0, r.y0, r.width() as i32, r.height() as i32] }),
+         "layers": doc.layers.iter().rev().map(|l| layer_sel(l, &selected, &instances, Some(&doc.metadata), detail)).collect::<Vec<_>>(),
+         "history": d.history.entries(),
+@@ -77,6 +78,49 @@ fn document_with(d: &DocState, detail: bool) -> Value {
+     })
+ }
+ 
++/// Bounded bitmap of the actual selection coverage for native selection feedback.
++/// Never serializes the full source mask or changes document/history state.
++fn selection_preview(d: &DocState) -> Value {
++    let Some(mask) = d.doc.selection.as_ref() else { return Value::Null; };
++    let bounds = mask.content_bounds();
++    let width = bounds.width();
++    let height = bounds.height();
++    if width == 0 || height == 0 { return Value::Null; }
++    let step = width.max(height).div_ceil(256).max(1);
++    let columns = width.div_ceil(step);
++    let rows = height.div_ceil(step);
++    let coverage: Vec<String> = (0..rows).map(|y| {
++        (0..columns).map(|x| {
++            let px = bounds.x0 + (x * step + step / 2).min(width - 1) as i32;
++            let py = bounds.y0 + (y * step + step / 2).min(height - 1) as i32;
++            if mask.sample_channel(px, py, 0) >= 0.5 { '1' } else { '0' }
++        }).collect()
++    }).collect();
++    json!({"origin": [bounds.x0, bounds.y0], "width": width, "height": height,
++           "step": step, "rows": coverage})
++}
++
++#[cfg(test)]
++mod domed_selection_tests {
++    #[test]
++    fn native_selection_preview_tracks_holes_and_is_bounded() {
++        let mut session = crate::Session::new();
++        session.execute("file.new", serde_json::json!({"width": 600, "height": 600})).unwrap();
++        session.execute("select.rect", serde_json::json!({"x": 0,"y": 0,"width": 600,"height": 600})).unwrap();
++        session.execute("select.rect", serde_json::json!({"x": 200,"y": 200,"width": 200,"height": 200,"mode":"subtract"})).unwrap();
++        let before = super::document(session.active().unwrap());
++        let p = &before["selectionPreview"];
++        assert!(p["rows"].as_array().unwrap().len() <= 256);
++        let first = p["rows"][0].as_str().unwrap();
++        assert!(first.len() <= 256);
++        assert_eq!(p["rows"][100].as_str().unwrap().as_bytes()[100], b'0');
++        assert_eq!(first.as_bytes()[0], b'1');
++        assert_eq!(before, super::document(session.active().unwrap()));
++        session.execute("select.deselect", serde_json::json!({})).unwrap();
++        assert!(super::document(session.active().unwrap())["selectionPreview"].is_null());
++    }
++}
++
+ /// Layer tree top-to-bottom (display order). Smart object instances are counted within `l`.
+ pub fn layer(l: &Layer) -> Value {
+     layer_sel(l, &[], &smart_instances(std::slice::from_ref(l)), None, false)

@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: MIT
-#include <artcraft/application.hpp>
-#include <artcraft/upstream_session.hpp>
 #include "command-form.hpp"
 #include "gpu-image.hpp"
 #include <FL/Fl.H>
@@ -21,11 +19,13 @@
 #include <FL/fl_draw.H>
 #include <algorithm>
 #include <array>
+#include <artcraft/application.hpp>
+#include <artcraft/upstream_session.hpp>
 #include <chrono>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <future>
-#include <deque>
 #include <iostream>
 #include <map>
 #include <set>
@@ -35,7 +35,8 @@ namespace {
 using dome_office::GpuImage;
 using dome_office::ScreenRect;
 class Photo;
-// Original native geometry for familiar tool affordances; no third-party icon assets.
+// Original native geometry for familiar tool affordances; no third-party icon
+// assets.
 class ToolButton : public Fl_Button {
   std::string tool_;
   void draw() override {
@@ -125,6 +126,14 @@ class ToolButton : public Fl_Button {
   }
 
 public:
+  std::function<void()> variants;
+  int handle(int event) override {
+    if (event == FL_PUSH && Fl::event_button() == FL_RIGHT_MOUSE && variants) {
+      variants();
+      return 1;
+    }
+    return Fl_Button::handle(event);
+  }
   ToolButton(int x, int y, int w, int h, std::string tool)
       : Fl_Button(x, y, w, h), tool_(std::move(tool)) {}
 };
@@ -239,8 +248,12 @@ class PhotoCanvas : public Fl_Widget {
   double scale_ = 1, pan_x_ = 0, pan_y_ = 0;
   Json points_ = Json::array();
   int start_x_ = 0, start_y_ = 0;
-  bool panning_ = false;
-  Json clone_source_;
+  bool panning_ = false, moving_selection_ = false;
+  std::string gesture_mode_, gesture_tool_;
+  int gesture_variant_ = 0;
+  bool selected(double px, double py) const;
+  void finish_polygon();
+  Json clone_source_, clone_offset_;
   std::array<unsigned, 256> bins_{};
   void draw() override;
   int handle(int event) override;
@@ -251,12 +264,14 @@ public:
   }
   void refresh(const Json &state);
   void geometry();
+  int ruler_size() const;
   const GpuImage &image() const { return image_; }
   double scale() const { return scale_; }
   const auto &histogram() const { return bins_; }
   const auto &paper() const { return paper_; }
   void reset_pan() { pan_x_ = pan_y_ = 0; }
   friend class Photo;
+  friend struct PhotoHarness;
 };
 class PhotoNavigator : public Fl_Widget {
   Photo &owner_;
@@ -284,11 +299,12 @@ class Photo {
   bool busy_ = true, dirty_ = false, panels_ = true, rulers_ = true;
   std::string error_, operation_, tool_ = "move", foreground_ = "#000000", background_ = "#ffffff";
   double zoom_ = 0;
+  int options_font_size_ = 0;
   int dock_width_ = 288, color_height_ = 190, properties_height_ = 198;
   std::filesystem::path path_;
   PhotoFrame *frame_;
-  Fl_Group *options_bar_, *toolbox_, *dock_, *rail_, *color_panel_, *properties_panel_,
-      *layers_panel_, *foot_;
+  Fl_Scroll *options_bar_;
+  Fl_Group *toolbox_, *dock_, *rail_, *color_panel_, *properties_panel_, *layers_panel_, *foot_;
   Fl_Tabs *documents_, *top_tabs_, *middle_tabs_, *bottom_tabs_;
   Fl_Group *navigator_panel_, *history_panel_, *histogram_panel_, *channels_panel_, *paths_panel_;
   PhotoCanvas *canvas_;
@@ -296,6 +312,10 @@ class Photo {
   Fl_Box *tool_label_, *dimensions_, *status_;
   Fl_Input *color_, *layer_filter_;
   Fl_Value_Input *brush_size_, *brush_opacity_, *hardness_, *layer_opacity_;
+  Fl_Choice *tool_variant_, *selection_operation_;
+  Fl_Value_Input *feather_, *tolerance_;
+  Fl_Check_Button *antialias_, *contiguous_, *sample_all_, *aligned_;
+  std::map<std::string, int> tool_variants_;
   Fl_Choice *paint_mode_, *blend_, *workspace_, *zoom_choice_;
   PhotoLayers *layers_;
   Fl_Hold_Browser *history_, *channels_, *paths_;
@@ -314,6 +334,7 @@ class Photo {
   };
   std::vector<std::unique_ptr<Binding>> bindings_;
   std::set<std::string> registered_;
+  friend struct PhotoHarness;
   friend class PhotoCanvas;
   friend class PhotoFrame;
   friend class PhotoNavigator;
@@ -420,10 +441,9 @@ class Photo {
         status();
         return;
       }
-      if (!queued_.empty() && queued_.back().first == id)
-        queued_.back().second.update(params);
-      else
-        queued_.push_back({std::move(id), std::move(params)});
+      // Each gesture is an undoable edit; merging identical command IDs loses
+      // strokes.
+      queued_.push_back({std::move(id), std::move(params)});
       return;
     }
     start(id, [this, id, params] { return engine_->execute(id, params); });
@@ -478,21 +498,88 @@ class Photo {
     if (result)
       start("new", [this, p = *result] { return engine_->tool("doc_new", p); });
   }
+  std::vector<std::string> variants(const std::string &tool) const {
+    if (tool == "marquee")
+      return {"Rectangular marquee", "Elliptical marquee", "Single row", "Single column"};
+    if (tool == "lasso")
+      return {"Lasso", "Polygonal lasso"};
+    if (tool == "selection")
+      return {"Magic wand", "Quick selection"};
+    if (tool == "shape")
+      return {"Rectangle", "Ellipse"};
+    if (tool == "gradient")
+      return {"Linear", "Radial", "Angle", "Reflected", "Diamond"};
+    return {};
+  }
+  int variant() const { return tool_variants_.contains(tool_) ? tool_variants_.at(tool_) : 0; }
+  void update_options() {
+    bool selecting = tool_ == "marquee" || tool_ == "lasso" || tool_ == "selection";
+    bool wand = tool_ == "selection" && variant() == 0;
+    bool quick = tool_ == "selection" && variant() == 1;
+    bool paint = tool_ == "brush" || tool_ == "eraser" || tool_ == "clone" || tool_ == "healing" ||
+                 tool_ == "history" || tool_ == "blur" || tool_ == "dodge";
+    auto show = [](Fl_Widget *widget, bool visible) {
+      if (visible)
+        widget->show();
+      else
+        widget->hide();
+    };
+    show(brush_size_, paint || quick);
+    show(paint_mode_, (paint && tool_ != "healing" && tool_ != "blur" && tool_ != "dodge") ||
+                          tool_ == "gradient");
+    show(brush_opacity_, paint || tool_ == "gradient");
+    show(hardness_, paint);
+    brush_opacity_->copy_label(tool_ == "dodge"  ? "Exposure"
+                               : tool_ == "blur" ? "Strength"
+                                                 : "Opacity");
+    show(aligned_, tool_ == "clone");
+    auto choices = variants(tool_);
+    tool_variant_->clear();
+    for (auto &choice : choices)
+      tool_variant_->add(choice.c_str());
+    tool_variant_->value(variant());
+    show(tool_variant_, !choices.empty());
+    show(selection_operation_, selecting);
+    selection_operation_->mode(3, quick ? FL_MENU_INACTIVE : 0);
+    if (quick && selection_operation_->value() == 3)
+      selection_operation_->value(0);
+    options_bar_->scroll_to(0, 0);
+    show(feather_, selecting && tool_ != "selection");
+    show(tolerance_, wand);
+    show(antialias_, selecting && !quick);
+    show(contiguous_, wand);
+    show(sample_all_, tool_ == "selection");
+    layout();
+    options_bar_->redraw();
+  }
   void set_tool(const std::string &tool) {
+    canvas_->points_ = Json::array();
+    canvas_->panning_ = false;
+    canvas_->moving_selection_ = false;
     tool_ = tool;
-    for (auto &[name, b] : tools_)
+    for (auto &[name, b] : tools_) {
       b->value(name == tool);
+      b->redraw();
+    }
     std::string label = tool;
     std::replace(label.begin(), label.end(), '_', ' ');
     if (!label.empty())
       label[0] = std::toupper(static_cast<unsigned char>(label[0]));
     tool_label_->copy_label(label.c_str());
     tool_label_->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_CLIP);
+    update_options();
     canvas_->take_focus();
     canvas_->redraw();
   }
   std::string selection_mode() const {
-    return Fl::event_state(FL_ALT) ? "subtract" : Fl::event_state(FL_SHIFT) ? "add" : "replace";
+    if (Fl::event_state(FL_ALT) && Fl::event_state(FL_SHIFT))
+      return "intersect";
+    if (Fl::event_state(FL_ALT))
+      return "subtract";
+    if (Fl::event_state(FL_SHIFT))
+      return "add";
+    static const char *modes[] = {"replace", "add", "subtract", "intersect"};
+    return modes[std::clamp(selection_operation_->value(), 0, 3)];
   }
   std::string color() const {
     std::string value = color_->value();
@@ -656,6 +743,10 @@ class Photo {
       app_.request_capture(options_.capture.string());
   }
   void tick() {
+    if (options_font_size_ != tool_variant_->textsize()) {
+      options_font_size_ = tool_variant_->textsize();
+      layout();
+    }
     if (job_.valid() && job_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
       try {
         auto reply = job_.get();
@@ -704,6 +795,8 @@ class Photo {
                     {"path", path_.string()},
                     {"error", error_},
                     {"tool", tool_},
+                    {"tool_variant", variant()},
+                    {"selection_mode", selection_mode()},
                     {"native_menu_commands", registered_.size()},
                     {"layout", layout_state()},
                     {"snapshot", snapshot_}};
@@ -756,6 +849,11 @@ class Photo {
             {"properties", rect(properties_panel_)},
             {"layers", rect(layers_panel_)},
             {"scale", canvas_->scale()},
+            {"paper",
+             {{"x", canvas_->paper().x},
+              {"y", canvas_->paper().y},
+              {"w", canvas_->paper().w},
+              {"h", canvas_->paper().h}}},
             {"workspace", workspace_->text() ? workspace_->text() : "Essentials"}};
   }
 
@@ -773,7 +871,9 @@ public:
     app_.window().begin();
     frame_ = new PhotoFrame(0, app_.content_top(), options_.width,
                             options_.height - app_.content_top(), *this);
-    options_bar_ = new Fl_Group(0, 0, options_.width, 40);
+    options_bar_ = new Fl_Scroll(0, 0, options_.width, 40);
+    options_bar_->type(Fl_Scroll::HORIZONTAL);
+    options_bar_->scrollbar_size(8);
     tool_label_ = new Fl_Box(8, 6, 96, 28, "move");
     brush_size_ = new Fl_Value_Input(152, 6, 58, 28, "Size");
     brush_size_->range(.5, 5000);
@@ -803,7 +903,35 @@ public:
       top_tabs_->value(panel);
       frame_->redraw();
     });
+    tool_variant_ = new Fl_Choice(108, 4, 174, 26);
+    bind(tool_variant_, [this] {
+      tool_variants_[tool_] = tool_variant_->value();
+      set_tool(tool_);
+    });
+    selection_operation_ = new Fl_Choice(292, 4, 110, 26);
+    for (auto mode : {"New", "Add", "Subtract", "Intersect"})
+      selection_operation_->add(mode);
+    selection_operation_->value(0);
+    selection_operation_->tooltip(
+        "Selection mode: Shift adds, Alt subtracts, Shift+Alt intersects");
+    feather_ = new Fl_Value_Input(470, 4, 55, 26, "Feather");
+    feather_->range(0, 1000);
+    feather_->value(0);
+    feather_->step(1);
+    tolerance_ = new Fl_Value_Input(480, 4, 55, 26, "Tolerance");
+    tolerance_->range(0, 255);
+    tolerance_->value(32);
+    tolerance_->step(1);
+    antialias_ = new Fl_Check_Button(546, 4, 110, 26, "Anti-alias");
+    antialias_->value(1);
+    contiguous_ = new Fl_Check_Button(660, 4, 118, 26, "Contiguous");
+    contiguous_->value(1);
+    sample_all_ = new Fl_Check_Button(782, 4, 142, 26, "All layers");
+    aligned_ = new Fl_Check_Button(686, 4, 112, 26, "Aligned");
+    aligned_->value(1);
     options_bar_->end();
+    options_bar_->remove(workspace_);
+    frame_->add(workspace_);
     toolbox_ = new Fl_Group(0, 40, 60, 650);
     const std::vector<std::pair<std::string, std::string>> tools = {
         {"V", "move"},     {"M", "marquee"}, {"L", "lasso"},      {"W", "selection"},
@@ -817,7 +945,25 @@ public:
       auto *b = new ToolButton(3 + (i % 2) * 28, 48 + (i / 2) * 30, 26, 28, name);
       bind(b, [this, name] { set_tool(name); });
       b->copy_label(key.c_str());
-      b->copy_tooltip((name + " (" + key + ")").c_str());
+      b->copy_tooltip(
+          (name + " (" + key + "); right-click for subtools, Shift+letter cycles").c_str());
+      b->variants = [this, name] {
+        auto choices = variants(name);
+        if (choices.empty()) {
+          set_tool(name);
+          return;
+        }
+        Fl_Menu_Button menu(Fl::event_x(), Fl::event_y(), 1, 1);
+        for (auto &choice : choices)
+          menu.add(choice.c_str());
+        menu.textfont(tool_variant_->textfont());
+        menu.textsize(tool_variant_->textsize());
+        menu.labelfont(tool_variant_->labelfont());
+        if (auto *picked = menu.popup()) {
+          tool_variants_[name] = int(picked - menu.menu());
+          set_tool(name);
+        }
+      };
       b->type(FL_TOGGLE_BUTTON);
       tools_[name] = b;
       ++i;
@@ -1022,6 +1168,7 @@ public:
     frame_->end();
     app_.window().resizable(frame_);
     app_.window().end();
+    app_.style();
     layout();
     set_tool("move");
     for (auto *tabs : {documents_, top_tabs_, middle_tabs_, bottom_tabs_})
@@ -1048,7 +1195,8 @@ public:
 };
 void Photo::setup_menus() {
   menu("app.about", "&PhotoCraft/&About PhotoCraft", [] {
-    fl_message("PhotoCraft for DomeD\nNative image workspace over the pinned Storytold engine.");
+    fl_message("PhotoCraft for DomeD\nNative image workspace over the pinned "
+               "Storytold engine.");
   });
   menu(
       "app.quit", "&PhotoCraft/&Quit",
@@ -1185,9 +1333,12 @@ void Photo::setup_menus() {
     });
   }
   menu("native.help", "&Help/PhotoCraft &Help", [] {
-    fl_message("Use the toolbox or letter shortcuts to select a tool.\nDrag on the image to paint, "
-               "select, move, crop or draw.\nSpace/Hand pans; Ctrl+wheel zooms.\nLayer, channel "
-               "and history panels edit the upstream document.\nAdvanced command parameters use "
+    fl_message("Use the toolbox or letter shortcuts to select a tool.\nDrag on "
+               "the image to paint, "
+               "select, move, crop or draw.\nSpace/Hand pans; Ctrl+wheel "
+               "zooms.\nLayer, channel "
+               "and history panels edit the upstream document.\nAdvanced "
+               "command parameters use "
                "native dialogs.");
   });
   std::set<std::string> paths;
@@ -1235,17 +1386,42 @@ void Photo::layout() {
   int width = w < 1000 ? 240 : dock_width_;
   width = std::clamp(width, 220, std::max(220, w - 360));
   int dx = x + w - width, rail = panels_ ? 32 : 0, right = panels_ ? dx - rail : x + w;
-  options_bar_->resize(x, y, w, 40);
-  tool_label_->resize(x + 6, y + 6, 96, 28);
-  brush_size_->resize(x + 150, y + 6, 58, 28);
-  paint_mode_->resize(x + 254, y + 6, 130, 28);
-  brush_opacity_->resize(x + 456, y + 6, 58, 28);
-  hardness_->resize(x + 594, y + 6, 54, 28);
-  workspace_->resize(x + w - 188, y + 6, 180, 28);
-  if (w < 1000)
-    hardness_->hide();
+  bool workspace_visible = w >= 1100;
+  if (workspace_visible)
+    workspace_->show();
   else
-    hardness_->show();
+    workspace_->hide();
+  options_bar_->resize(x, y, w - (workspace_visible ? 200 : 0), 40);
+  // Measure the current native bitmap face; fixed 16px assumptions overlap at
+  // larger DomeD appearance sizes. Keep every field reachable by horizontal
+  // scroll.
+  fl_font(tool_variant_->textfont(), tool_variant_->textsize());
+  auto text_width = [](const char *text) { return int(std::ceil(fl_width(text ? text : ""))); };
+  int offset = x + 6 - options_bar_->xposition();
+  for (Fl_Widget *control :
+       std::vector<Fl_Widget *>{tool_label_, tool_variant_, selection_operation_, brush_size_,
+                                paint_mode_, brush_opacity_, hardness_, feather_, tolerance_,
+                                antialias_, contiguous_, sample_all_, aligned_}) {
+    if (!control->visible())
+      continue;
+    int width = std::max(60, text_width(control->label()) + 12), label = 0;
+    if (auto *choice = dynamic_cast<Fl_Choice *>(control)) {
+      width = 70;
+      for (int item = 0; item < choice->size() - 1; ++item)
+        if (choice->text(item))
+          width = std::max(width, text_width(choice->text(item)) + 32);
+      label = text_width(control->label());
+    } else if (dynamic_cast<Fl_Value_Input *>(control)) {
+      width = std::max(58, text_width("1000") + 18);
+      label = text_width(control->label());
+    } else if (dynamic_cast<Fl_Check_Button *>(control))
+      width = text_width(control->label()) + 30;
+    if (label)
+      offset += label + 8;
+    control->resize(offset, y + 3, width, 28);
+    offset += width + 12;
+  }
+  workspace_->resize(x + w - 188, y + 3, 180, 28);
   toolbox_->resize(x, top, 60, bottom - top);
   int cell = std::clamp((bottom - top - 144) / 11, 22, 30);
   for (int i = 0; i < 21 && i < toolbox_->children(); ++i)
@@ -1294,6 +1470,8 @@ void Photo::layout() {
     description->show();
   description->resize(dx + 10, top + 34, width - 20, 28);
   int cy = top + (small ? 32 : 66);
+  color_panel_->child(1)->copy_label("FG...");
+  color_panel_->child(1)->tooltip("Edit foreground colour");
   color_panel_->child(1)->resize(dx + 8, cy, (width - 24) / 2, 24);
   color_panel_->child(2)->hide();
   color_->resize(dx + 16 + (width - 24) / 2, cy, (width - 24) / 2, 24);
@@ -1307,6 +1485,10 @@ void Photo::layout() {
   for (int i = 0; i < middle_tabs_->children(); ++i)
     middle_tabs_->child(i)->resize(dx, top + ch + 30, width, ph - 26);
   dimensions_->resize(dx + 10, top + ch + 36, width - 20, std::max(42, ph - 72));
+  properties_panel_->child(1)->copy_label("Image");
+  properties_panel_->child(1)->tooltip("Image size and resolution");
+  properties_panel_->child(2)->copy_label("Canvas");
+  properties_panel_->child(2)->tooltip("Canvas size");
   properties_panel_->child(1)->resize(dx + 8, top + ch + ph - 28, (width - 24) / 2, 26);
   properties_panel_->child(2)->resize(dx + 16 + (width - 24) / 2, top + ch + ph - 28,
                                       (width - 24) / 2, 26);
@@ -1322,6 +1504,8 @@ void Photo::layout() {
   layer_filter_->resize(dx + 8, ly + 32, width - 16, 24);
   blend_->resize(dx + 8, ly + 60, std::max(90, width - 126), 24);
   layer_opacity_->resize(dx + width - 62, ly + 60, 54, 24);
+  layer_opacity_->label("");
+  layer_opacity_->tooltip("Layer opacity (%)");
   bool locks = lh > 230;
   for (int i = 3; i < 6; ++i) {
     auto *child = layers_panel_->child(i);
@@ -1334,9 +1518,15 @@ void Photo::layout() {
   int list_y = ly + (locks ? 118 : 88);
   layers_->resize(dx + 8, list_y, width - 16, std::max(28, bottom - list_y - 36));
   int button_width = (width - 16) / 5;
-  for (int i = 7; i < 12; ++i)
-    layers_panel_->child(i)->resize(dx + 8 + (i - 7) * button_width, bottom - 30, button_width - 4,
-                                    26);
+  const char *icons[] = {"fx", "M", "G", "+", "-"};
+  const char *tips[] = {"Layer effects", "Add layer mask", "New group", "New layer",
+                        "Delete layer"};
+  for (int i = 7; i < 12; ++i) {
+    auto *control = layers_panel_->child(i);
+    control->copy_label(icons[i - 7]);
+    control->tooltip(tips[i - 7]);
+    control->resize(dx + 8 + (i - 7) * button_width, bottom - 30, button_width - 4, 26);
+  }
   channels_->resize(dx + 8, ly + 34, width - 16, std::max(50, lh - 72));
   paths_->resize(dx + 8, ly + 34, width - 16, std::max(50, lh - 72));
   for (auto *panel : {channels_panel_, paths_panel_})
@@ -1393,8 +1583,39 @@ int PhotoFrame::handle(int event) {
   }
   return Fl_Group::handle(event);
 }
+bool PhotoCanvas::selected(double px, double py) const {
+  auto preview =
+      owner_.snapshot_.value("document", Json::object()).value("selectionPreview", Json());
+  if (!preview.is_object())
+    return false;
+  auto origin = preview.at("origin");
+  int step = preview.at("step"), column = int(std::floor((px - origin[0].get<int>()) / step)),
+      row = int(std::floor((py - origin[1].get<int>()) / step));
+  const auto &rows = preview.at("rows");
+  if (row < 0 || row >= int(rows.size()) || column < 0)
+    return false;
+  const auto &line = rows[row].get_ref<const std::string &>();
+  return column < int(line.size()) && line[column] == '1';
+}
+void PhotoCanvas::finish_polygon() {
+  if (points_.size() < 3)
+    return;
+  Json polygon = Json::array();
+  for (auto &point : points_)
+    polygon.push_back(Json::array({point[0], point[1]}));
+  points_ = Json::array();
+  owner_.execute("select.lasso", {{"points", polygon},
+                                  {"mode", gesture_mode_},
+                                  {"polygonal", true},
+                                  {"antiAlias", bool(owner_.antialias_->value())},
+                                  {"feather", owner_.feather_->value()}});
+  redraw();
+}
+int PhotoCanvas::ruler_size() const {
+  return owner_.rulers_ ? std::max(22, owner_.app_.platform_info().font_pixels * 2) : 0;
+}
 void PhotoCanvas::geometry() {
-  const int inset = owner_.rulers_ ? 22 : 0;
+  const int inset = ruler_size();
   auto doc = owner_.snapshot_.value("document", Json::object());
   int width = std::max(1, doc.value("width", 1)), height = std::max(1, doc.value("height", 1));
   scale_ = owner_.zoom_ > 0
@@ -1440,7 +1661,7 @@ void PhotoCanvas::draw() {
   fl_color(fl_darker(FL_BACKGROUND_COLOR));
   fl_rectf(x(), y(), w(), h());
   geometry();
-  int inset = owner_.rulers_ ? 22 : 0;
+  int inset = ruler_size();
   ScreenRect clip{x() + inset, y() + inset, w() - inset, h() - inset};
   if (!image_.empty()) {
     int left = std::max(paper_.x, clip.x), top = std::max(paper_.y, clip.y),
@@ -1456,18 +1677,53 @@ void PhotoCanvas::draw() {
     fl_color(FL_DARK3);
     fl_rect(paper_.x - 1, paper_.y - 1, paper_.w + 2, paper_.h + 2);
   }
-  auto selection =
-      owner_.snapshot_.value("document", Json::object()).value("selectionBounds", Json());
-  if (selection.is_array() && selection.size() >= 4) {
-    fl_color(FL_WHITE);
-    fl_line_style(FL_DASH, 1);
-    fl_rect(paper_.x + int(selection[0].get<double>() * scale_),
-            paper_.y + int(selection[1].get<double>() * scale_),
-            std::max(1, int(selection[2].get<double>() * scale_)),
-            std::max(1, int(selection[3].get<double>() * scale_)));
+  auto preview =
+      owner_.snapshot_.value("document", Json::object()).value("selectionPreview", Json());
+  if (preview.is_object()) {
+    const auto &rows = preview.at("rows");
+    int step = preview.at("step"), ox = preview["origin"][0], oy = preview["origin"][1];
+    if (moving_selection_ && points_.size() > 1) {
+      ox += int(points_.back()[0].get<double>() - points_.front()[0].get<double>());
+      oy += int(points_.back()[1].get<double>() - points_.front()[1].get<double>());
+    }
+    auto filled = [&](int column, int row) {
+      if (row < 0 || row >= int(rows.size()) || column < 0)
+        return false;
+      const auto &line = rows[row].get_ref<const std::string &>();
+      return column < int(line.size()) && line[column] == '1';
+    };
+    auto edge = [&](int x1, int y1, int x2, int y2) {
+      int left = paper_.x + int(x1 * scale_), top = paper_.y + int(y1 * scale_),
+          right = paper_.x + int(x2 * scale_), bottom = paper_.y + int(y2 * scale_);
+      fl_color(FL_BLACK);
+      fl_line_style(FL_SOLID, 1);
+      fl_line(left, top, right, bottom);
+      fl_color(FL_WHITE);
+      fl_line_style(FL_DASH, 1);
+      fl_line(left, top, right, bottom);
+    };
+    int width = preview.at("width"), height = preview.at("height");
+    dome_office::GpuClip selection_clip(*this, clip);
+    for (int row = 0; row < int(rows.size()); ++row)
+      for (int column = 0; column < int(rows[row].get_ref<const std::string &>().size());
+           ++column) {
+        if (!filled(column, row))
+          continue;
+        int left = ox + column * step, top = oy + row * step,
+            right = ox + std::min(width, (column + 1) * step),
+            bottom = oy + std::min(height, (row + 1) * step);
+        if (!filled(column - 1, row))
+          edge(left, top, left, bottom);
+        if (!filled(column + 1, row))
+          edge(right, top, right, bottom);
+        if (!filled(column, row - 1))
+          edge(left, top, right, top);
+        if (!filled(column, row + 1))
+          edge(left, bottom, right, bottom);
+      }
     fl_line_style(0);
   }
-  if (points_.size() > 1 && !panning_) {
+  if (points_.size() > 1 && !panning_ && !moving_selection_) {
     fl_color(FL_SELECTION_COLOR);
     auto first = points_.front(), last = points_.back();
     int sx = paper_.x + int(first[0].get<double>() * scale_),
@@ -1477,10 +1733,17 @@ void PhotoCanvas::draw() {
     if (owner_.tool_ == "marquee" || owner_.tool_ == "crop" || owner_.tool_ == "shape" ||
         owner_.tool_ == "frame") {
       fl_line_style(FL_DASH, 1);
-      fl_rect(std::min(sx, ex), std::min(sy, ey), std::abs(ex - sx), std::abs(ey - sy));
+      if ((owner_.tool_ == "marquee" && gesture_variant_ == 1) ||
+          (owner_.tool_ == "shape" && gesture_variant_ == 1))
+        fl_arc(std::min(sx, ex), std::min(sy, ey), std::abs(ex - sx), std::abs(ey - sy), 0, 360);
+      else
+        fl_rect(std::min(sx, ex), std::min(sy, ey), std::abs(ex - sx), std::abs(ey - sy));
       fl_line_style(0);
     } else {
-      fl_line_style(FL_SOLID, std::max(1, int(owner_.brush_size_->value() * scale_)));
+      bool line_tool = owner_.tool_ == "lasso" || owner_.tool_ == "move" ||
+                       owner_.tool_ == "gradient" || moving_selection_;
+      fl_line_style(FL_SOLID,
+                    line_tool ? 1 : std::max(1, int(owner_.brush_size_->value() * scale_)));
       for (size_t i = 1; i < points_.size(); ++i)
         fl_line(paper_.x + int(points_[i - 1][0].get<double>() * scale_),
                 paper_.y + int(points_[i - 1][1].get<double>() * scale_),
@@ -1491,8 +1754,8 @@ void PhotoCanvas::draw() {
   }
   if (owner_.rulers_) {
     fl_color(FL_BACKGROUND_COLOR);
-    fl_rectf(x(), y(), w(), 22);
-    fl_rectf(x(), y(), 22, h());
+    fl_rectf(x(), y(), w(), inset);
+    fl_rectf(x(), y(), inset, h());
     fl_color(FL_FOREGROUND_COLOR);
     fl_font(labelfont(), labelsize());
     double step = 100;
@@ -1503,17 +1766,17 @@ void PhotoCanvas::draw() {
     auto doc = owner_.snapshot_.value("document", Json::object());
     for (double v = 0; v <= doc.value("width", 1) && v / step < 300; v += step) {
       int px = paper_.x + int(v * scale_);
-      if (px < x() + 22 || px > x() + w())
+      if (px < x() + inset || px > x() + w())
         continue;
-      fl_line(px, y() + 16, px, y() + 21);
+      fl_line(px, y() + inset - 6, px, y() + inset - 1);
       auto label = std::to_string(int(v));
-      fl_draw(label.c_str(), px + 3, y() + 14);
+      fl_draw(label.c_str(), px + 3, y() + inset - 8);
     }
     for (double v = 0; v <= doc.value("height", 1) && v / step < 300; v += step) {
       int py = paper_.y + int(v * scale_);
-      if (py < y() + 22 || py > y() + h())
+      if (py < y() + inset || py > y() + h())
         continue;
-      fl_line(x() + 16, py, x() + 21, py);
+      fl_line(x() + inset - 6, py, x() + inset - 1, py);
       auto label = std::to_string(int(v));
       fl_draw(label.c_str(), x() + 1, py - 3);
     }
@@ -1524,6 +1787,27 @@ int PhotoCanvas::handle(int event) {
   try {
     if (event == FL_FOCUS || event == FL_UNFOCUS)
       return 1;
+    if (event == FL_RELEASE && points_.empty())
+      return 1;
+    if (event == FL_ENTER || event == FL_MOVE) {
+      owner_.app_.window().cursor(owner_.tool_ == "hand" ? FL_CURSOR_HAND : FL_CURSOR_CROSS);
+      return 1;
+    }
+    if (event == FL_LEAVE) {
+      owner_.app_.window().cursor(FL_CURSOR_DEFAULT);
+      return 1;
+    }
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Escape) {
+      points_ = Json::array();
+      panning_ = moving_selection_ = false;
+      redraw();
+      return 1;
+    }
+    if (event == FL_KEYDOWN && Fl::event_key() == FL_Enter && owner_.tool_ == "lasso" &&
+        owner_.variant() == 1) {
+      finish_polygon();
+      return 1;
+    }
     if (event == FL_MOUSEWHEEL) {
       if (Fl::event_state(FL_CTRL)) {
         owner_.zoom(scale_ * (Fl::event_dy() > 0 ? .8 : 1.25));
@@ -1538,13 +1822,40 @@ int PhotoCanvas::handle(int event) {
     if (event == FL_KEYDOWN && !Fl::event_state(FL_CTRL | FL_ALT | FL_META)) {
       int key = std::tolower(Fl::event_key());
       const std::map<int, std::string> tools = {
-          {'v', "move"},  {'m', "marquee"},    {'l', "lasso"},   {'w', "selection"},
-          {'c', "crop"},  {'i', "eyedropper"}, {'j', "healing"}, {'b', "brush"},
-          {'s', "clone"}, {'y', "history"},    {'e', "eraser"},  {'g', "gradient"},
-          {'r', "blur"},  {'o', "dodge"},      {'p', "pen"},     {'t', "type"},
-          {'a', "path"},  {'u', "shape"},      {'h', "hand"},    {'z', "zoom"}};
+          {'v', "move"},     {'m', "marquee"}, {'l', "lasso"},      {'w', "selection"},
+          {'c', "crop"},     {'k', "frame"},   {'i', "eyedropper"}, {'j', "healing"},
+          {'b', "brush"},    {'s', "clone"},   {'y', "history"},    {'e', "eraser"},
+          {'g', "gradient"}, {'r', "blur"},    {'o', "dodge"},      {'p', "pen"},
+          {'t', "type"},     {'a', "path"},    {'u', "shape"},      {'h', "hand"},
+          {'z', "zoom"}};
       if (auto t = tools.find(key); t != tools.end()) {
+        if (Fl::event_state(FL_SHIFT) && owner_.tool_ == t->second) {
+          auto choices = owner_.variants(t->second);
+          if (!choices.empty())
+            owner_.tool_variants_[t->second] = (owner_.variant() + 1) % choices.size();
+        }
         owner_.set_tool(t->second);
+        return 1;
+      }
+      if (key == 'd' || key == 'x') {
+        if (key == 'd') {
+          owner_.foreground_ = "#000000";
+          owner_.background_ = "#ffffff";
+        } else
+          std::swap(owner_.foreground_, owner_.background_);
+        owner_.color_->value(owner_.foreground_.c_str());
+        owner_.execute("tools.setColors",
+                       {{"foreground", owner_.foreground_}, {"background", owner_.background_}});
+        return 1;
+      }
+      if (key == '[' || key == ']') {
+        owner_.brush_size_->value(
+            std::clamp(owner_.brush_size_->value() * (key == '[' ? .8 : 1.25), .5, 5000.));
+        return 1;
+      }
+      if (key == FL_Tab) {
+        owner_.panels_ = !owner_.panels_;
+        owner_.layout();
         return 1;
       }
       if (key == FL_Delete || key == FL_BackSpace) {
@@ -1552,26 +1863,56 @@ int PhotoCanvas::handle(int event) {
         return 1;
       }
     }
-    if (owner_.busy_)
-      return 0;
+    if (owner_.busy_ && (owner_.operation_ == "startup" || owner_.operation_ == "open" ||
+                         owner_.operation_ == "document" || owner_.operation_ == "close" ||
+                         owner_.operation_ == "new"))
+      return 1;
     auto doc = owner_.snapshot_.value("document", Json::object());
     int width = std::max(1, doc.value("width", 1)), height = std::max(1, doc.value("height", 1));
+    geometry();
     double px = (Fl::event_x() - paper_.x) / scale_, py = (Fl::event_y() - paper_.y) / scale_;
-    px = std::clamp(px, 0., double(width - 1));
-    py = std::clamp(py, 0., double(height - 1));
+    bool inside = px >= 0 && py >= 0 && px < double(width) && py < double(height) &&
+                  Fl::event_x() >= x() + ruler_size() && Fl::event_y() >= y() + ruler_size();
+    bool selecting = owner_.tool_ == "marquee" || owner_.tool_ == "lasso";
+    px = std::clamp(px, 0., double(selecting ? width : width - 1));
+    py = std::clamp(py, 0., double(selecting ? height : height - 1));
     if (event == FL_PUSH) {
       take_focus();
+      if (Fl::event_button() != FL_LEFT_MOUSE && Fl::event_button() != FL_MIDDLE_MOUSE)
+        return 1;
+      bool pan =
+          owner_.tool_ == "hand" || Fl::event_button() == FL_MIDDLE_MOUSE || Fl::event_key(' ');
+      if (!pan && !inside)
+        return 1;
+      if (owner_.tool_ == "lasso" && owner_.variant() == 1 && !pan) {
+        if (points_.empty()) {
+          gesture_mode_ = owner_.selection_mode();
+          gesture_tool_ = owner_.tool_;
+          gesture_variant_ = 1;
+        }
+        if (points_.size() < 8192)
+          points_.push_back(Json::array({px, py, 1.}));
+        if (Fl::event_clicks() && points_.size() >= 3)
+          finish_polygon();
+        redraw();
+        return 1;
+      }
+      gesture_tool_ = owner_.tool_;
+      gesture_mode_ = owner_.selection_mode();
+      gesture_variant_ = owner_.variant();
+      moving_selection_ = selecting && gesture_mode_ == "replace" && selected(px, py);
       if (owner_.tool_ == "clone" && Fl::event_state(FL_ALT)) {
         clone_source_ = Json::array({px, py});
+        clone_offset_ = Json();
         owner_.error_ = "Clone source set";
         owner_.status();
         return 1;
       }
-      panning_ =
-          owner_.tool_ == "hand" || Fl::event_button() == FL_MIDDLE_MOUSE || Fl::event_key(' ');
+      panning_ = pan;
       start_x_ = Fl::event_x();
       start_y_ = Fl::event_y();
       points_ = Json::array({Json::array({px, py, 1.})});
+      redraw();
       if (owner_.tool_ == "zoom") {
         owner_.zoom(scale_ * (Fl::event_state(FL_ALT) ? .8 : 1.25));
         points_ = Json::array();
@@ -1580,6 +1921,8 @@ int PhotoCanvas::handle(int event) {
       return 1;
     }
     if ((event == FL_DRAG || event == FL_RELEASE) && !points_.empty()) {
+      if (owner_.tool_ == "lasso" && owner_.variant() == 1 && !panning_)
+        return 1;
       if (panning_) {
         pan_x_ += Fl::event_x() - start_x_;
         pan_y_ += Fl::event_y() - start_y_;
@@ -1604,32 +1947,90 @@ int PhotoCanvas::handle(int event) {
           y0 = int(std::min(first[1].get<double>(), last[1].get<double>())),
           rw = std::max(1, int(std::abs(first[0].get<double>() - last[0].get<double>()))),
           rh = std::max(1, int(std::abs(first[1].get<double>() - last[1].get<double>())));
-      auto tool = owner_.tool_;
-      if (tool == "move")
+      auto tool = gesture_tool_;
+      if (moving_selection_) {
+        moving_selection_ = false;
+        int dx = int(std::round(last[0].get<double>() - first[0].get<double>())),
+            dy = int(std::round(last[1].get<double>() - first[1].get<double>()));
+        if (dx || dy)
+          owner_.execute("select.transformSelection",
+                         {{"dx", dx}, {"dy", dy}, {"stepName", "Move Selection"}});
+        else
+          owner_.execute("select.deselect");
+      } else if (tool == "move" && doc.value("hasSelection", false))
+        owner_.execute("select.float", {{"dx", int(last[0].get<double>() - first[0].get<double>())},
+                                        {"dy", int(last[1].get<double>() - first[1].get<double>())},
+                                        {"copy", bool(Fl::event_state(FL_ALT))}});
+      else if (tool == "move")
         owner_.execute("layer.translate",
                        {{"dx", int(last[0].get<double>() - first[0].get<double>())},
                         {"dy", int(last[1].get<double>() - first[1].get<double>())}});
-      else if (tool == "marquee")
-        owner_.execute("select.rect", {{"x", x0},
-                                       {"y", y0},
-                                       {"width", rw},
-                                       {"height", rh},
-                                       {"mode", owner_.selection_mode()}});
-      else if (tool == "lasso") {
+      else if (tool == "marquee") {
+        if (gesture_variant_ == 2) {
+          x0 = 0;
+          rw = width;
+          rh = 1;
+        }
+        if (gesture_variant_ == 3) {
+          y0 = 0;
+          rh = height;
+          rw = 1;
+        }
+        if (std::abs(last[0].get<double>() - first[0].get<double>()) < .5 &&
+            std::abs(last[1].get<double>() - first[1].get<double>()) < .5 && gesture_variant_ < 2) {
+          if (gesture_mode_ == "replace")
+            owner_.execute("select.deselect");
+        } else
+          owner_.execute("select.rect", {{"x", x0},
+                                         {"y", y0},
+                                         {"width", rw},
+                                         {"height", rh},
+                                         {"mode", gesture_mode_},
+                                         {"ellipse", gesture_variant_ == 1},
+                                         {"antiAlias", bool(owner_.antialias_->value())},
+                                         {"feather", owner_.feather_->value()}});
+      } else if (tool == "lasso") {
         Json polygon = Json::array();
         for (const auto &point : points)
           polygon.push_back(Json::array({point[0], point[1]}));
         if (polygon.size() >= 3)
-          owner_.execute("select.lasso", {{"points", polygon}, {"mode", owner_.selection_mode()}});
-      } else if (tool == "selection")
-        owner_.execute("select.magicWand",
-                       {{"x", int(px)}, {"y", int(py)}, {"mode", owner_.selection_mode()}});
-      else if (tool == "crop" && rw >= 2 && rh >= 2)
+          owner_.execute("select.lasso", {{"points", polygon},
+                                          {"mode", gesture_mode_},
+                                          {"antiAlias", bool(owner_.antialias_->value())},
+                                          {"feather", owner_.feather_->value()}});
+        else if (gesture_mode_ == "replace")
+          owner_.execute("select.deselect");
+      } else if (tool == "selection") {
+        if (gesture_variant_ == 1) {
+          Json stroke = Json::array();
+          for (auto &point : points)
+            stroke.push_back(Json::array({point[0], point[1]}));
+          if (gesture_mode_ == "intersect") {
+            owner_.error_ = "Quick selection supports New, Add or Subtract";
+            owner_.status();
+          } else
+            owner_.execute("select.quick",
+                           {{"points", stroke},
+                            {"size", owner_.brush_size_->value()},
+                            {"mode", gesture_mode_},
+                            {"sampleAllLayers", bool(owner_.sample_all_->value())}});
+        } else
+          owner_.execute("select.magicWand",
+                         {{"x", int(first[0].get<double>())},
+                          {"y", int(first[1].get<double>())},
+                          {"mode", gesture_mode_},
+                          {"tolerance", owner_.tolerance_->value()},
+                          {"contiguous", bool(owner_.contiguous_->value())},
+                          {"antiAlias", bool(owner_.antialias_->value())},
+                          {"sampleAllLayers", bool(owner_.sample_all_->value())}});
+      } else if (tool == "crop" && rw >= 2 && rh >= 2)
         owner_.execute("image.crop", {{"x", x0}, {"y", y0}, {"width", rw}, {"height", rh}});
-      else if (tool == "shape" || tool == "frame")
-        owner_.execute(
-            "shape.create",
-            {{"kind", "rect"}, {"rect", Json::array({x0, y0, rw, rh})}, {"fill", owner_.color()}});
+      else if (tool == "frame")
+        owner_.execute("layer.new.frame", {{"x", x0}, {"y", y0}, {"width", rw}, {"height", rh}});
+      else if (tool == "shape")
+        owner_.execute("shape.create", {{"kind", gesture_variant_ == 1 ? "ellipse" : "rect"},
+                                        {"rect", Json::array({x0, y0, rw, rh})},
+                                        {"fill", owner_.color()}});
       else if (tool == "type") {
         auto p = dome_office::command_form(
             "org.domed.PhotoCraft",
@@ -1651,10 +2052,15 @@ int PhotoCanvas::handle(int event) {
           return result;
         });
       else if (tool == "gradient")
-        owner_.execute("paint.gradient",
-                       {{"from", Json::array({first[0], first[1]})},
-                        {"to", Json::array({last[0], last[1]})},
-                        {"colors", Json::array({owner_.color(), owner_.background_})}});
+        owner_.execute(
+            "paint.gradient",
+            {{"from", Json::array({first[0], first[1]})},
+             {"to", Json::array({last[0], last[1]})},
+             {"colors", Json::array({owner_.color(), owner_.background_})},
+             {"style", std::array<const char *, 5>{"linear", "radial", "angle", "reflected",
+                                                   "diamond"}[std::clamp(gesture_variant_, 0, 4)]},
+             {"opacity", owner_.brush_opacity_->value()},
+             {"mode", owner_.paint_mode_->text()}});
       else if (tool == "pen" || tool == "path")
         owner_.form(tool == "pen" ? "path.create" : "path.transform");
       else {
@@ -1673,13 +2079,28 @@ int PhotoCanvas::handle(int event) {
         params["hardness"] = owner_.hardness_->value() / (normal ? 100. : 1.);
         if (tool == "eraser")
           params["erase"] = true;
+        if (tool == "blur" || tool == "dodge") {
+          params[tool == "blur" ? "strength" : "exposure"] = owner_.brush_opacity_->value();
+          params["opacity"] = 100;
+        }
         if (tool == "clone") {
           if (clone_source_.is_null()) {
             owner_.error_ = "Alt-click to set a clone source";
             owner_.status();
             return 1;
           }
-          params["source"] = clone_source_;
+          bool aligned = owner_.aligned_->value();
+          if (aligned) {
+            if (clone_offset_.is_null())
+              clone_offset_ =
+                  Json::array({clone_source_[0].get<double>() - first[0].get<double>(),
+                               clone_source_[1].get<double>() - first[1].get<double>()});
+            params["offset"] = clone_offset_;
+          } else {
+            params["source"] = clone_source_;
+            clone_offset_ = Json();
+          }
+          params["aligned"] = aligned;
         }
         owner_.execute(command, params);
       }
@@ -1771,8 +2192,8 @@ int main(int argc, char **argv) {
       else if (argument == "--height")
         options.height = std::clamp(std::stoi(value()), 500, 2160);
       else if (argument == "--help") {
-        std::cout
-            << "PhotoCraft DomeD [image] [--workspace DIR] [--engine PATH] [--registry FILE]\n";
+        std::cout << "PhotoCraft DomeD [image] [--workspace DIR] [--engine "
+                     "PATH] [--registry FILE]\n";
         return 0;
       } else if (!argument.starts_with('-') && options.document.empty())
         options.document = std::filesystem::absolute(argument);

@@ -24,6 +24,30 @@ visibility, blend mode, opacity, locks, masks, grouping, creation and deletion.
 History and channel actions operate on the same document. Compound operations
 remain available in native parameter dialogs from the command catalog.
 
+The tool-options strip changes with the tool: marquee shape, selection mode,
+feather and anti-aliasing; wand tolerance, contiguous and sample-all-layers;
+quick-selection size; brush size/mode/opacity/hardness; aligned Clone Stamp;
+and real Blur strength/Dodge exposure. Right-click a grouped tool or use its
+options dropdown to choose a subtool; Shift+the tool letter cycles subtools.
+The strip scrolls horizontally in compact windows and the workspace picker
+hides before it can overlap editing controls.
+
+Rectangular, elliptical, single-row/column, freehand/polygonal lasso, Magic Wand
+and Quick Selection gestures dispatch the upstream commands. Shift adds, Alt
+subtracts and Shift+Alt intersects; modifiers are captured at press. Dragging
+inside a selection moves its outline; Move with a selection floats its pixels.
+Polygonal lasso commits with Enter/double-click. Escape cancels pending gestures.
+A simple marquee click deselects; clicks outside the image do not paint/select
+its edge, and selections can reach the final image row/column. Rapid strokes
+are queued separately so each remains an independent engine edit.
+
+`document.inspect.selectionPreview` is a read-only bitmap of actual selection
+coverage, bounded to 256 rows/columns. Native black/white outlines follow that
+mask, including curves, disjoint pieces and holes, instead of a bounding box.
+Large-image feedback is sampled; this does not change the full-resolution
+engine mask or document pixels. The small mask is also used for outline-hit
+feedback. Frame creates a genuine frame layer, rather than a filled rectangle.
+
 A bounded optional `layer` field on the headless `render_preview` tool supplies
 1–256px thumbnails without changing the document, layer visibility, selection or
 history. It clones the document's shared metadata, isolates the requested layer
@@ -60,6 +84,13 @@ are retained and hashed in `upstream.lock.json`.
 
 The preview-error regression also verifies that failed raster generation preserves
 the authoritative dirty state and save destination.
+
+`dome-photo-tools-test LOCK ENGINE WORKSPACE` additionally drives native mouse,
+keyboard and tool-option callbacks against the real engine: selection geometry,
+intersection/modifier release, elliptical masks, outline movement, outside-image
+clicks, Escape, full-canvas edges, polygon lasso, wand and consecutive strokes.
+The engine unit regression verifies holes, bounded preview size and read-only
+inspection.
 
 Native tests exercise the real engine through exported menus: opening a generated
 image, creating/duplicating/deleting layers, painting, undo/redo, zoom, dock

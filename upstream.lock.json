@@ -186,14 +186,15 @@
       "patches": [
         {
           "path": "patches/photocraft-domed-native.patch",
-          "sha256": "7f15d7d681a5e8d1d159737be74b5346a399dd00b685ce4a01274291e0f7ab52",
+          "sha256": "acbefbd60606616736cd4475e736765dd761d58b21b7979704feb14e574d0cb8",
           "includes_upstream_fix": "https://github.com/storytold/photocraft/pull/13129"
         }
       ],
       "patched_files": {
         "crates/automation/src/headless.rs": "61cde77a268e137df97291eaf0a109685633068f933dc74284edcefdfca6e042",
         "crates/automation/src/server.rs": "fe26fde28c601dd04e3a6a6c025607e6453234e475e9a35a9d01f2f1f40f5ab6",
-        "crates/codecs/src/codecs/tiff/decode.rs": "9cbd46fd00f62f59485d48a50b98a5803f6139fb116153e62d8b0bd658e8e67a"
+        "crates/codecs/src/codecs/tiff/decode.rs": "9cbd46fd00f62f59485d48a50b98a5803f6139fb116153e62d8b0bd658e8e67a",
+        "crates/engine/src/inspect.rs": "43bbf54cfba6e8c1753a87d2b62b71a7bd40258fe3621a95676a048b568cf47b"
       },
       "catalogue": "ports/catalogues/photocraft.json",
       "catalogue_sha256": "f025ed6e39b71a30fb258659beb15b46b4e0f59d53d12b87da80471b073df275",
