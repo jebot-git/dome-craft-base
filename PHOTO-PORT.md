@@ -37,7 +37,11 @@ options dropdown to choose a subtool; Shift+the tool letter cycles subtools.
 Context menus and choice dropdowns are native child widgets drawn in the same
 GPU window, including modal-editor dropdowns and the color chooser. Right-click
 opens canvas, Layers, Channels, Paths and History actions. Hold a grouped tool
-for its flyout. Keyboard navigation, checked/disabled entries, scrolling and
+for its flyout. Tool buttons activate on press, show the DomeD selection accent and retain
+canvas keyboard focus;
+a held click on an ungrouped tool such as Brush does not open a subtool menu.
+Dismissing a grouped flyout keeps that tool active. Keyboard navigation,
+checked/disabled entries, scrolling and
 outside-click/Escape dismissal share the same menu implementation. Right-click
 on a layer selects it without toggling its eye; menu state is taken after that
 selection reaches the engine.
@@ -119,7 +123,8 @@ the authoritative dirty state and save destination.
 keyboard and tool-option callbacks against the real engine: selection geometry,
 intersection/modifier release, elliptical masks, outline movement, outside-image
 clicks, Escape, full-canvas edges, polygon lasso, wand and consecutive strokes. It also dispatches real window-level pointer events
-through flyouts, choice dropdowns (including modal ones), and canvas/layer
+through toolbar press/release/hold activation, flyouts, choice dropdowns
+(including modal ones), and canvas/layer
 context menus; verifies dedicated image-size controls, inline type commit,
 graphical Pen/Path, confirmed crop, all twelve adjustment controllers and
 alpha-channel creation/deletion. GPU framebuffer readback additionally verifies

@@ -127,13 +127,11 @@ class ToolButton : public Fl_Button {
 
 public:
   std::function<void()> variants;
-  bool holding_ = false, flyout_ = false;
+  bool holding_ = false, has_subtools_ = false;
   static void held(void *p) {
     auto &self = *static_cast<ToolButton *>(p);
-    if (self.holding_ && self.variants) {
-      self.flyout_ = true;
+    if (self.holding_ && self.has_subtools_ && self.visible_r() && self.variants)
       self.variants();
-    }
   }
   ~ToolButton() { Fl::remove_timeout(held, this); }
   int handle(int event) override {
@@ -143,8 +141,17 @@ public:
     }
     if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
       holding_ = true;
-      flyout_ = false;
-      Fl::add_timeout(.35, held, this);
+      // Tools are actions, not independent on/off toggles. Activate before a
+      // hold can open a grouped-tool menu, and keep canvas keyboard focus.
+      do_callback();
+      if (has_subtools_)
+        Fl::add_timeout(.35, held, this);
+      return 1;
+    }
+    if (event == FL_DRAG && holding_) {
+      if (!Fl::event_inside(this))
+        Fl::remove_timeout(held, this);
+      return 1;
     }
     if (event == FL_RELEASE) {
       Fl::remove_timeout(held, this);
@@ -154,15 +161,15 @@ public:
           variants();
         return 1;
       }
-      if (flyout_) {
-        value(1);
+      if (Fl::event_button() == FL_LEFT_MOUSE)
         return 1;
-      }
     }
     return Fl_Button::handle(event);
   }
   ToolButton(int x, int y, int w, int h, std::string tool)
-      : Fl_Button(x, y, w, h), tool_(std::move(tool)) {}
+      : Fl_Button(x, y, w, h), tool_(std::move(tool)) {
+    selection_color(FL_SELECTION_COLOR);
+  }
 };
 class ColorPairButton : public Fl_Button {
   std::function<std::pair<std::string, std::string>()> colors_;
@@ -1149,8 +1156,11 @@ public:
       auto *b = new ToolButton(3 + (i % 2) * 28, 48 + (i / 2) * 30, 26, 28, name);
       bind(b, [this, name] { set_tool(name); });
       b->copy_label(key.c_str());
+      b->has_subtools_ = !variants(name).empty();
       b->copy_tooltip(
-          (name + " (" + key + "); right-click for subtools, Shift+letter cycles").c_str());
+          (name + " (" + key + ")" +
+           (b->has_subtools_ ? "; hold/right-click for subtools, Shift+letter cycles" : ""))
+              .c_str());
       b->variants = [this, name, b] { tool_menu(name, b->x() + b->w(), b->y()); };
       b->type(FL_TOGGLE_BUTTON);
       tools_[name] = b;

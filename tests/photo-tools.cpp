@@ -31,7 +31,8 @@ struct PhotoHarness {
     Fl::e_keysym = FL_Button + button;
     Fl::e_clicks = 0;
     Fl::e_number = event;
-    check(photo.canvas_->handle(event), "Canvas did not handle the pointer event");
+    check(Fl::handle(event, &photo.app_.window()),
+          "Window did not dispatch the canvas pointer event");
   }
   static void drag(Photo &photo, double x, double y, double ex, double ey, int modifiers = 0) {
     event(photo, FL_PUSH, x, y, modifiers);
@@ -178,6 +179,52 @@ struct PhotoHarness {
     });
     wait(photo);
     photo.zoom(3);
+    // A normal leisurely click must select Brush rather than leave the old
+    // tool active behind an unexpected hold menu.
+    auto *brush = static_cast<ToolButton *>(photo.tools_.at("brush"));
+    pointer(photo, FL_PUSH, brush->x() + brush->w() / 2, brush->y() + brush->h() / 2);
+    check(photo.tool_ == "brush" && brush->value(), "Brush was not activated on press");
+    auto click_until = std::chrono::steady_clock::now() + std::chrono::milliseconds(420);
+    while (std::chrono::steady_clock::now() < click_until)
+      Fl::wait(.02);
+    pointer(photo, FL_RELEASE, brush->x() + brush->w() / 2, brush->y() + brush->h() / 2);
+    check(photo.tool_ == "brush" && brush->value(),
+          "Holding Brush leaves the previous tool active");
+    check(!photo.context_->visible(), "Ungrouped Brush incorrectly opens a subtool menu");
+    check(Fl::focus() == photo.canvas_, "Toolbar activation did not retain canvas keyboard focus");
+    auto toolbar = capture(photo, options.workspace / "toolbar-brush-active.ppm");
+    auto *inactive = photo.tools_.at("clone");
+    double toolbar_scale = double(toolbar.width) / photo.app_.window().w();
+    auto background = [&](Fl_Widget *button) {
+      int px = int((button->x() + 4) * toolbar_scale),
+          py = int((button->y() + button->h() / 2) * toolbar_scale);
+      return toolbar.pixels.data() + (size_t(py) * toolbar.width + px) * 3;
+    };
+    auto *active_color = background(brush), *inactive_color = background(inactive);
+    int contrast = 0;
+    for (int i = 0; i < 3; ++i)
+      contrast += std::abs(int(active_color[i]) - int(inactive_color[i]));
+    check(contrast > 60, "Active toolbar tool has no visible accent highlight");
+    auto brush_revision = photo.snapshot_["document"]["revision"].get<unsigned long>();
+    drag(photo, 30, 30, 40, 30);
+    check(photo.snapshot_["document"]["revision"].get<unsigned long>() > brush_revision,
+          "Toolbar-selected brush did not paint");
+    auto *painted = photo.canvas_->image().pixels();
+    auto *dab = painted->array +
+                30 * (painted->ld() ? painted->ld() : painted->data_w() * painted->d()) +
+                35 * painted->d();
+    check(dab[0] < 32 && dab[1] < 32 && dab[2] < 32,
+          "Toolbar-selected brush did not change image pixels");
+    photo.execute("edit.undo");
+    wait(photo);
+    // Select tools through real window pointer dispatch, including releasing a
+    // previously selected tool. Direct callbacks miss toolbar state bugs.
+    for (const auto &tool : {"brush", "selection", "lasso", "marquee"}) {
+      auto *button = photo.tools_.at(tool);
+      for (int event : {FL_PUSH, FL_RELEASE})
+        pointer(photo, event, button->x() + button->w() / 2, button->y() + button->h() / 2);
+      check(photo.tool_ == tool && button->value(), "Toolbar click did not activate its tool");
+    }
     photo.tools_.at("marquee")->do_callback();
     check(photo.tool_ == "marquee" && photo.selection_operation_->visible() &&
               photo.feather_->visible() && !photo.brush_opacity_->visible(),
@@ -285,7 +332,19 @@ struct PhotoHarness {
           "Polygonal lasso did not create selection");
     photo.execute("select.deselect");
     wait(photo);
-    photo.set_tool("selection");
+    auto *selection = photo.tools_.at("selection");
+    pointer(photo, FL_PUSH, selection->x() + 10, selection->y() + 10);
+    check(photo.tool_ == "selection" && selection->value(),
+          "Selection tool was not activated on press");
+    auto select_until = std::chrono::steady_clock::now() + std::chrono::milliseconds(420);
+    while (std::chrono::steady_clock::now() < select_until)
+      Fl::wait(.02);
+    check(photo.context_->visible(), "Held selection tool has no subtool flyout");
+    pointer(photo, FL_RELEASE, selection->x() + 10, selection->y() + 10);
+    // Dismissing the flyout must keep the newly activated parent tool.
+    photo.context_->close();
+    check(photo.tool_ == "selection" && selection->value(),
+          "Dismissing flyout reverted the selection tool");
     check(photo.tolerance_->visible() && photo.contiguous_->visible() && !photo.feather_->visible(),
           "Wand options are not contextual");
     photo.tolerance_->value(0);
@@ -294,8 +353,11 @@ struct PhotoHarness {
           "Magic Wand is not bound to the engine");
     photo.execute("select.deselect");
     wait(photo);
-    photo.tool_variant_->value(1);
-    photo.tool_variant_->do_callback();
+    pointer(photo, FL_PUSH, selection->x() + 10, selection->y() + 10, FL_RIGHT_MOUSE);
+    pointer(photo, FL_RELEASE, selection->x() + 10, selection->y() + 10, FL_RIGHT_MOUSE);
+    click_popup(photo, "Quick selection");
+    check(photo.tool_ == "selection" && photo.variant() == 1,
+          "Toolbar flyout did not activate Quick Selection");
     check(photo.brush_size_->visible() && !photo.tolerance_->visible(),
           "Quick Selection does not show brush size");
     drag(photo, 12, 12, 18, 18);
@@ -433,7 +495,8 @@ struct PhotoHarness {
           "Native alpha channel deletion did not target the selected channel");
     check(!photo.native_control("3d.newMeshFromLayer"),
           "Unimplemented action offers a command form fallback");
-    std::cout << "Pointer-dispatched tool/canvas/layer menus, dedicated Image Size, graphical "
+    std::cout << "Toolbar press/hold activation and brush pixels, pointer-dispatched "
+                 "tool/canvas/layer menus, dedicated Image Size, graphical "
                  "pen/path and inline type controls passed\n";
     photo.app_.quit();
     std::cout << "Native marquee/ellipse/intersection, mask feedback, "
